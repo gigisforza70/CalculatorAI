@@ -1,0 +1,6 @@
+{
+  "name": "Calcolatrice",
+  "description": "Un'app calcolatrice esteticamente ispirata alla calcolatrice predefinita di Samsung",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
