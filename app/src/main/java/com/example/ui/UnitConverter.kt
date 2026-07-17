@@ -8,6 +8,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -36,27 +38,27 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
     var unit1 by remember { mutableStateOf(lengthUnits[2]) }
     var unit2 by remember { mutableStateOf(lengthUnits[1]) }
     
-    var value1 by remember { mutableStateOf("1") }
-    var value2 by remember { mutableStateOf("100") }
+    var value1 by remember { mutableStateOf("0") }
+    var value2 by remember { mutableStateOf("0") }
     
     var focus1 by remember { mutableStateOf(true) }
 
     fun updateValues(input: String, isFirst: Boolean) {
         try {
-            val v = input.toDoubleOrNull() ?: 0.0
+            val v = input.replace(",", ".").toDoubleOrNull() ?: 0.0
             if (isFirst) {
                 value1 = input
                 if (selectedCategory == UnitCategory.Temperature) {
-                    value2 = convertTemp(v, unit1.name, unit2.name).toString()
+                    value2 = convertTemp(v, unit1.name, unit2.name).toString().replace(".", ",")
                 } else {
-                    value2 = formatDouble((v * unit1.multiplierToStandard) / unit2.multiplierToStandard)
+                    value2 = formatDouble((v * unit1.multiplierToStandard) / unit2.multiplierToStandard).replace(".", ",")
                 }
             } else {
                 value2 = input
                 if (selectedCategory == UnitCategory.Temperature) {
-                    value1 = convertTemp(v, unit2.name, unit1.name).toString()
+                    value1 = convertTemp(v, unit2.name, unit1.name).toString().replace(".", ",")
                 } else {
-                    value1 = formatDouble((v * unit2.multiplierToStandard) / unit1.multiplierToStandard)
+                    value1 = formatDouble((v * unit2.multiplierToStandard) / unit1.multiplierToStandard).replace(".", ",")
                 }
             }
         } catch(e: Exception) {}
@@ -74,8 +76,8 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
         }
         unit1 = list.first()
         unit2 = list.getOrNull(1) ?: list.first()
-        value1 = "1"
-        updateValues("1", true)
+        value1 = "0"
+        updateValues("0", true)
     }
 
     val onAction: (String) -> Unit = { action ->
@@ -91,7 +93,7 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
                 else if (currentVal != "0") updateValues("-$currentVal", focus1)
             }
             else -> {
-                val newVal = if (currentVal == "0" && action != ".") action else currentVal + action
+                val newVal = if (currentVal == "0" && action != ",") action else currentVal + action
                 updateValues(newVal, focus1)
             }
         }
@@ -158,39 +160,62 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
         
         // Keypad
         val pad = listOf(
-            listOf("C", "backspace"),
-            listOf("7", "8", "9"),
-            listOf("4", "5", "6"),
-            listOf("1", "2", "3"),
-            listOf("+/-", "0", ".")
+            listOf("7", "8", "9", "backspace"),
+            listOf("4", "5", "6", "C"),
+            listOf("1", "2", "3", "up"),
+            listOf("+/-", "0", ",", "down")
         )
 
         pad.forEach { row ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 24.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(horizontal = 4.dp, vertical = 2.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 row.forEach { btn ->
-                    if (btn == "backspace") {
-                        Box(
-                            modifier = Modifier
-                                .size(72.dp)
-                                .clip(androidx.compose.foundation.shape.CircleShape)
-                                .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
-                                .clickable { onAction("backspace") },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.AutoMirrored.Filled.Backspace, "Backspace", tint = primaryColor)
+                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                        if (btn == "backspace") {
+                            Box(
+                                modifier = Modifier
+                                    .size(84.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                    .clickable { onAction("backspace") },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.AutoMirrored.Filled.Backspace, "Backspace", tint = primaryColor)
+                            }
+                        } else if (btn == "up") {
+                            Box(
+                                modifier = Modifier
+                                    .size(84.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                    .clickable { focus1 = true },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.ArrowUpward, "Up", tint = primaryColor)
+                            }
+                        } else if (btn == "down") {
+                            Box(
+                                modifier = Modifier
+                                    .size(84.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                    .clickable { focus1 = false },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.ArrowDownward, "Down", tint = primaryColor)
+                            }
+                        } else {
+                            com.example.CalculatorButton(
+                                text = btn,
+                                onClick = { onAction(btn) },
+                                isDark = isDark,
+                                primaryColor = primaryColor
+                            )
                         }
-                    } else {
-                        com.example.CalculatorButton(
-                            text = btn,
-                            onClick = { onAction(btn) },
-                            isDark = isDark,
-                            primaryColor = primaryColor
-                        )
                     }
                 }
             }
