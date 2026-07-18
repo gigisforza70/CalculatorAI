@@ -9,6 +9,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Backspace
 import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -24,24 +25,37 @@ enum class UnitCategory { Length, Area, Temperature, Volume, Mass, Data }
 
 data class UnitType(val name: String, val multiplierToStandard: Double) // For temperature it's more complex, but we'll simplify or special-case
 
-val lengthUnits = listOf(UnitType("Millimeters", 0.001), UnitType("Centimeters", 0.01), UnitType("Meters", 1.0), UnitType("Kilometers", 1000.0), UnitType("Inches", 0.0254), UnitType("Feet", 0.3048), UnitType("Miles", 1609.34))
-val areaUnits = listOf(UnitType("Acres", 4046.86), UnitType("Ares", 100.0), UnitType("Hectares", 10000.0), UnitType("Square centimeters", 0.0001), UnitType("Square feet", 0.092903), UnitType("Square inches", 0.00064516), UnitType("Square meters", 1.0))
-val volumeUnits = listOf(UnitType("Gallons (US)", 3.78541), UnitType("Liters", 1.0), UnitType("Milliliters", 0.001), UnitType("Cubic centimeters", 0.001), UnitType("Cubic meters", 1000.0))
-val massUnits = listOf(UnitType("Milligrams", 0.000001), UnitType("Grams", 0.001), UnitType("Kilograms", 1.0), UnitType("Ounces", 0.0283495), UnitType("Pounds", 0.453592))
-val dataUnits = listOf(UnitType("Bytes", 1.0), UnitType("Kilobytes", 1024.0), UnitType("Megabytes", 1048576.0), UnitType("Gigabytes", 1073741824.0), UnitType("Terabytes", 1099511627776.0))
+val lengthUnits = listOf(UnitType("Nanometers", 1e-9), UnitType("Micrometers", 1e-6), UnitType("Millimeters", 0.001), UnitType("Centimeters", 0.01), UnitType("Decimeters", 0.1), UnitType("Meters", 1.0), UnitType("Kilometers", 1000.0), UnitType("Inches", 0.0254), UnitType("Feet", 0.3048), UnitType("Yards", 0.9144), UnitType("Miles", 1609.344), UnitType("Nautical miles", 1852.0))
+val areaUnits = listOf(UnitType("Square millimeters", 0.000001), UnitType("Square centimeters", 0.0001), UnitType("Square meters", 1.0), UnitType("Hectares", 10000.0), UnitType("Square kilometers", 1000000.0), UnitType("Square inches", 0.00064516), UnitType("Square feet", 0.09290304), UnitType("Square yards", 0.83612736), UnitType("Acres", 4046.8564224), UnitType("Square miles", 2589988.110336))
+val volumeUnits = listOf(UnitType("Milliliters", 0.001), UnitType("Cubic centimeters", 0.001), UnitType("Liters", 1.0), UnitType("Cubic meters", 1000.0), UnitType("Teaspoons (US)", 0.00492892), UnitType("Tablespoons (US)", 0.0147868), UnitType("Fluid ounces (US)", 0.0295735), UnitType("Cups (US)", 0.236588), UnitType("Pints (US)", 0.473176), UnitType("Quarts (US)", 0.946353), UnitType("Gallons (US)", 3.78541), UnitType("Cubic inches", 0.0163871), UnitType("Cubic feet", 28.3168))
+val massUnits = listOf(UnitType("Micrograms", 1e-9), UnitType("Milligrams", 1e-6), UnitType("Grams", 0.001), UnitType("Kilograms", 1.0), UnitType("Metric tonnes", 1000.0), UnitType("Ounces", 0.0283495), UnitType("Pounds", 0.453592), UnitType("Stones", 6.35029), UnitType("Short tons (US)", 907.185), UnitType("Long tons (UK)", 1016.05))
+val dataUnits = listOf(UnitType("Bits", 0.125), UnitType("Bytes", 1.0), UnitType("Kilobits", 128.0), UnitType("Kilobytes", 1024.0), UnitType("Megabits", 131072.0), UnitType("Megabytes", 1048576.0), UnitType("Gigabits", 134217728.0), UnitType("Gigabytes", 1073741824.0), UnitType("Terabits", 137438953472.0), UnitType("Terabytes", 1099511627776.0), UnitType("Petabytes", 1125899906842624.0))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3)) {
     var selectedCategory by remember { mutableStateOf(UnitCategory.Length) }
     
-    var unit1 by remember { mutableStateOf(lengthUnits[2]) }
-    var unit2 by remember { mutableStateOf(lengthUnits[1]) }
+    var unit1 by remember { mutableStateOf(lengthUnits[5]) }
+    var unit2 by remember { mutableStateOf(lengthUnits[3]) }
     
     var value1 by remember { mutableStateOf("0") }
     var value2 by remember { mutableStateOf("0") }
     
     var focus1 by remember { mutableStateOf(true) }
+    var expanded1 by remember { mutableStateOf(false) }
+    var expanded2 by remember { mutableStateOf(false) }
+
+    val currentUnitsList = remember(selectedCategory) {
+        when(selectedCategory) {
+            UnitCategory.Length -> lengthUnits
+            UnitCategory.Area -> areaUnits
+            UnitCategory.Volume -> volumeUnits
+            UnitCategory.Mass -> massUnits
+            UnitCategory.Data -> dataUnits
+            UnitCategory.Temperature -> listOf(UnitType("Celsius", 1.0), UnitType("Fahrenheit", 1.0), UnitType("Kelvin", 1.0))
+        }
+    }
 
     fun updateValues(input: String, isFirst: Boolean) {
         try {
@@ -66,16 +80,8 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
 
     // Effect when category changes
     LaunchedEffect(selectedCategory) {
-        val list = when(selectedCategory) {
-            UnitCategory.Length -> lengthUnits
-            UnitCategory.Area -> areaUnits
-            UnitCategory.Volume -> volumeUnits
-            UnitCategory.Mass -> massUnits
-            UnitCategory.Data -> dataUnits
-            UnitCategory.Temperature -> listOf(UnitType("Celsius", 1.0), UnitType("Fahrenheit", 1.0), UnitType("Kelvin", 1.0))
-        }
-        unit1 = list.first()
-        unit2 = list.getOrNull(1) ?: list.first()
+        unit1 = currentUnitsList.first()
+        unit2 = currentUnitsList.getOrNull(1) ?: currentUnitsList.first()
         value1 = "0"
         updateValues("0", true)
     }
@@ -141,7 +147,40 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
             .fillMaxWidth()
             .clickable { focus1 = true }
             .padding(24.dp)) {
-            Text(text = unit1.name, color = if(focus1) primaryColor else secondaryTextColor, fontSize = 16.sp)
+            ExposedDropdownMenuBox(
+                expanded = expanded1,
+                onExpandedChange = { expanded1 = !expanded1 }
+            ) {
+                Row(modifier = Modifier.menuAnchor(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = unit1.name,
+                        color = if(focus1) primaryColor else secondaryTextColor,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Dropdown",
+                        tint = if(focus1) primaryColor else secondaryTextColor
+                    )
+                }
+                ExposedDropdownMenu(
+                    expanded = expanded1,
+                    onDismissRequest = { expanded1 = false },
+                    modifier = Modifier.background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFF0F0F0))
+                ) {
+                    currentUnitsList.forEach { unit ->
+                        DropdownMenuItem(
+                            text = { Text(unit.name, color = if(isDark) Color.White else Color.Black) },
+                            onClick = {
+                                unit1 = unit
+                                expanded1 = false
+                                updateValues(value1, true)
+                            }
+                        )
+                    }
+                }
+            }
             Text(text = value1, color = if(focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414)), fontSize = 48.sp, maxLines = 1)
         }
         
@@ -152,7 +191,40 @@ fun UnitConverterScreen(onBack: () -> Unit, isDark: Boolean = true, primaryColor
             .fillMaxWidth()
             .clickable { focus1 = false }
             .padding(24.dp)) {
-            Text(text = unit2.name, color = if(!focus1) primaryColor else secondaryTextColor, fontSize = 16.sp)
+            ExposedDropdownMenuBox(
+                expanded = expanded2,
+                onExpandedChange = { expanded2 = !expanded2 }
+            ) {
+                Row(modifier = Modifier.menuAnchor(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = unit2.name,
+                        color = if(!focus1) primaryColor else secondaryTextColor,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        imageVector = Icons.Default.ArrowDropDown,
+                        contentDescription = "Dropdown",
+                        tint = if(!focus1) primaryColor else secondaryTextColor
+                    )
+                }
+                ExposedDropdownMenu(
+                    expanded = expanded2,
+                    onDismissRequest = { expanded2 = false },
+                    modifier = Modifier.background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFF0F0F0))
+                ) {
+                    currentUnitsList.forEach { unit ->
+                        DropdownMenuItem(
+                            text = { Text(unit.name, color = if(isDark) Color.White else Color.Black) },
+                            onClick = {
+                                unit2 = unit
+                                expanded2 = false
+                                updateValues(value2, false)
+                            }
+                        )
+                    }
+                }
+            }
             Text(text = value2, color = if(!focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414)), fontSize = 48.sp, maxLines = 1)
         }
         

@@ -100,6 +100,9 @@ fun CalculatorApp(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val isTablet = configuration.screenWidthDp >= 600
+    val isTabletPortrait = isTablet && !isLandscape
+    val isTabletLandscape = isTablet && isLandscape
 
     var screen by remember { mutableStateOf("calculator") }
     if (screen == "converter") {
@@ -114,17 +117,18 @@ fun CalculatorApp(
     val history by viewModel.history.collectAsStateWithLifecycle()
     var showHistory by remember { mutableStateOf(false) }
     var isScientific by remember { mutableStateOf(false) }
+    var isResultCalculated by remember { mutableStateOf(false) }
 
-    var expression by remember { mutableStateOf("") }
+    var expression by remember { mutableStateOf(androidx.compose.ui.text.input.TextFieldValue("")) }
     var resultPreview by remember { mutableStateOf("") }
 
     // Evaluate whenever expression changes
     LaunchedEffect(expression) {
-        if (expression.isEmpty()) {
+        if (expression.text.isEmpty()) {
             resultPreview = ""
         } else {
             try {
-                val evalResult = evaluate(expression.replace(",", ".").replace("×", "*").replace("÷", "/"))
+                val evalResult = evaluate(expression.text.replace(",", ".").replace("×", "*").replace("÷", "/"))
                 val df = DecimalFormat("#.########")
                 val resultStr = df.format(evalResult).replace(".", ",")
                 resultPreview = formatExpression(resultStr)
@@ -136,75 +140,83 @@ fun CalculatorApp(
     }
 
     val onAction: (String) -> Unit = { action ->
+        if (isResultCalculated) {
+            isResultCalculated = false
+            if (action !in listOf("+", "-", "×", "÷", "%", "x^y", "x²", "x!", "1/x", "√x", "^", "=", "backspace")) {
+                expression = androidx.compose.ui.text.input.TextFieldValue("")
+            }
+        }
+        
         when (action) {
             "C" -> {
-                expression = ""
+                expression = androidx.compose.ui.text.input.TextFieldValue("")
                 resultPreview = ""
             }
             "=" -> {
                 if (resultPreview.isNotEmpty()) {
-                    viewModel.addHistory(expression, resultPreview)
-                    expression = resultPreview
+                    viewModel.addHistory(expression.text, resultPreview.replace(".", ""))
+                    expression = androidx.compose.ui.text.input.TextFieldValue(resultPreview.replace(".", ""))
                     resultPreview = ""
+                    isResultCalculated = true
                 }
             }
             "( )" -> {
-                val openParenCount = expression.count { it == '(' }
-                val closeParenCount = expression.count { it == ')' }
-                expression += if (openParenCount > closeParenCount) ")" else "("
+                val openParenCount = expression.text.count { it == '(' }
+                val closeParenCount = expression.text.count { it == ')' }
+                expression = insertAtCursor(expression, if (openParenCount > closeParenCount) ")" else "(")
             }
             "+/-" -> {
-                if (expression.isEmpty() || expression.last() in listOf('+', '-', '×', '÷', '(')) {
-                    expression += "(-"
-                } else if (expression.last() == ')') {
-                    expression += "×(-"
+                if (expression.text.isEmpty() || expression.text.last() in listOf('+', '-', '×', '÷', '(')) {
+                    expression = insertAtCursor(expression, "(-")
+                } else if (expression.text.last() == ')') {
+                    expression = insertAtCursor(expression, "×(-")
                 } else {
-                    var i = expression.lastIndex
-                    while (i >= 0 && (expression[i].isDigit() || expression[i] == '.' || expression[i] == ',')) {
+                    var i = expression.text.lastIndex
+                    while (i >= 0 && (expression.text[i].isDigit() || expression.text[i] == '.' || expression.text[i] == ',')) {
                         i--
                     }
-                    if (i >= 1 && expression[i] == '-' && expression[i-1] == '(') {
+                    if (i >= 1 && expression.text[i] == '-' && expression.text[i-1] == '(') {
                         // It was "(-", let's remove it
-                        expression = expression.substring(0, i - 1) + expression.substring(i + 1)
+                        expression = androidx.compose.ui.text.input.TextFieldValue(expression.text.substring(0, i - 1) + expression.text.substring(i + 1))
                     } else {
                         // Insert "(-"
-                        expression = expression.substring(0, i + 1) + "(-" + expression.substring(i + 1)
+                        expression = androidx.compose.ui.text.input.TextFieldValue(expression.text.substring(0, i + 1) + "(-" + expression.text.substring(i + 1))
                     }
                 }
             }
             "sin", "cos", "tan", "lg", "ln", "√", "abs" -> {
                 val funcName = if (action == "lg") "log" else action
-                expression += "$funcName("
+                expression = insertAtCursor(expression, "$funcName(")
             }
-            "x^y" -> expression += "^"
-            "x²" -> expression += "^2"
-            "|x|" -> expression += "abs("
-            "x!" -> expression += "!"
-            "1/x" -> expression += "1/("
-            "√x" -> expression += "√("
+            "x^y" -> expression = insertAtCursor(expression, "^")
+            "x²" -> expression = insertAtCursor(expression, "^2")
+            "|x|" -> expression = insertAtCursor(expression, "abs(")
+            "x!" -> expression = insertAtCursor(expression, "!")
+            "1/x" -> expression = insertAtCursor(expression, "1/(")
+            "√x" -> expression = insertAtCursor(expression, "√(")
             "2nd", "deg" -> { /* No-op for now or basic toggle */ }
             "backspace" -> {
-                if (expression.isNotEmpty()) {
-                    expression = expression.dropLast(1)
+                if (expression.text.isNotEmpty()) {
+                    expression = deleteAtCursor(expression)
                 }
             }
             "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" -> {
-                val parts = expression.split(Regex("[+\\-×÷()\\^!√]"))
+                val parts = expression.text.split(Regex("[+\\-×÷()\\^!√]"))
                 val lastPart = parts.last()
                 val digitCount = lastPart.count { it.isDigit() }
                 if (digitCount < 15) {
-                    expression += action
+                    expression = insertAtCursor(expression, action)
                 }
             }
             "," -> {
-                val parts = expression.split(Regex("[+\\-×÷()\\^!√]"))
+                val parts = expression.text.split(Regex("[+\\-×÷()\\^!√]"))
                 val lastPart = parts.last()
                 if (!lastPart.contains(",")) {
-                    expression += action
+                    expression = insertAtCursor(expression, action)
                 }
             }
             else -> {
-                expression += action
+                expression = insertAtCursor(expression, action)
             }
         }
     }
@@ -231,31 +243,41 @@ fun CalculatorApp(
             ) {
                 val scrollState = rememberScrollState()
                 
-                LaunchedEffect(expression.length) {
+                LaunchedEffect(expression.text.length) {
                     scrollState.animateScrollTo(scrollState.maxValue)
                 }
                 
-                Text(
-                    text = formatExpression(expression),
-                    fontSize = if (isLandscape) {
-                        when {
-                            expression.length > 25 -> 18.sp
-                            expression.length > 15 -> 24.sp
-                            else -> 36.sp
-                        }
-                    } else {
-                        when {
-                            expression.length > 25 -> 28.sp
-                            expression.length > 15 -> 38.sp
-                            expression.length > 10 -> 48.sp
-                            else -> 64.sp
-                        }
+                androidx.compose.foundation.text.BasicTextField(
+                    value = expression,
+                    onValueChange = { newValue ->
+                        // Only allow selection changes or deletion, avoid arbitrary text input if possible,
+                        // but actually we can just accept it, so physical keyboard works!
+                        expression = newValue
                     },
-                    fontWeight = FontWeight.Light,
-                    color = if (isDark) Color(0xFFFBFBFB) else Color(0xFF141414),
-                    maxLines = 1,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        fontSize = if (isLandscape) {
+                            when {
+                                expression.text.length > 25 -> 16.sp
+                                expression.text.length > 15 -> 20.sp
+                                else -> 32.sp
+                            }
+                        } else {
+                            when {
+                                expression.text.length > 25 -> 20.sp
+                                expression.text.length > 15 -> 28.sp
+                                expression.text.length > 10 -> 36.sp
+                                else -> 48.sp
+                            }
+                        },
+                        fontWeight = FontWeight.Light,
+                        color = if (isDark) Color(0xFFFBFBFB) else Color(0xFF141414),
+                        textAlign = TextAlign.End
+                    ),
+                    singleLine = true,
+                    readOnly = true, // To prevent soft keyboard from popping up
+                    visualTransformation = ExpressionVisualTransformation(),
                     modifier = Modifier.horizontalScroll(scrollState),
-                    textAlign = TextAlign.End
+                    cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor)
                 )
                 
                 Spacer(modifier = Modifier.weight(1f))
@@ -315,7 +337,119 @@ fun CalculatorApp(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Keypad
-        if (isLandscape) {
+        if (isTabletPortrait) {
+            val tabletPortraitKeys = listOf(
+                listOf("sin", "cos", "tan", "^", "(", ")", "%", "÷"),
+                listOf("asn", "acs", "atn", "!", "7", "8", "9", "×"),
+                listOf("snh", "csh", "tnh", "√", "4", "5", "6", "-"),
+                listOf("ash", "ach", "ath", "π", "1", "2", "3", "+"),
+                listOf("ln", "lg", "g", "e", "0", ",", "=")
+            )
+            Column(modifier = Modifier.fillMaxWidth().weight(1.5f), verticalArrangement = Arrangement.SpaceEvenly) {
+                tabletPortraitKeys.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        row.forEach { btn ->
+                            CalculatorButton(
+                                text = btn,
+                                onClick = { onAction(btn) },
+                                isScientific = true,
+                                isDark = isDark,
+                                primaryColor = primaryColor,
+                                modifier = Modifier.weight(if (btn == "0") 2f else 1f).padding(horizontal = 4.dp),
+                                isLandscape = false,
+                                isTabletPortrait = true
+                            )
+                        }
+                    }
+                }
+            }
+        } else if (isTabletLandscape) {
+            val tabletPortraitKeys = listOf(
+                listOf("sin", "cos", "tan", "^", "(", ")", "%", "÷"),
+                listOf("asn", "acs", "atn", "!", "7", "8", "9", "×"),
+                listOf("snh", "csh", "tnh", "√", "4", "5", "6", "-"),
+                listOf("ash", "ach", "ath", "π", "1", "2", "3", "+"),
+                listOf("ln", "lg", "g", "e", "0", ",", "=")
+            )
+            Row(modifier = Modifier.fillMaxWidth().weight(1.5f), horizontalArrangement = Arrangement.SpaceBetween) {
+                // Left side (History permanently shown)
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    if (history.isEmpty()) {
+                        Text(
+                            "Qui vedrai la cronologia\ndei calcoli.",
+                            textAlign = TextAlign.Center,
+                            color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 64.dp)
+                        ) {
+                            items(history) { entry ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression)
+                                            isResultCalculated = true
+                                        }
+                                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                                    horizontalAlignment = Alignment.End
+                                ) {
+                                    Text(text = formatExpression(entry.expression), color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070), fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "=" + formatExpression(entry.result), color = primaryColor, fontSize = 24.sp, fontWeight = FontWeight.Medium)
+                                }
+                            }
+                        }
+                        androidx.compose.material3.Button(
+                            onClick = { viewModel.clearHistory() },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth(0.7f)
+                                .padding(bottom = 8.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)),
+                            shape = CircleShape
+                        ) {
+                            Text("Clear history", color = if(isDark) Color.White else Color.Black, fontSize = 14.sp)
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(16.dp))
+                Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
+                Spacer(modifier = Modifier.width(16.dp))
+                
+                // Right side (tablet portrait keys layout)
+                Column(modifier = Modifier.weight(2.5f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+                    tabletPortraitKeys.forEach { row ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceEvenly,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            row.forEach { btn ->
+                                CalculatorButton(
+                                    text = btn,
+                                    onClick = { onAction(btn) },
+                                    isScientific = true,
+                                    isDark = isDark,
+                                    primaryColor = primaryColor,
+                                    modifier = Modifier.weight(if (btn == "0") 2f else 1f).padding(horizontal = 4.dp),
+                                    isLandscape = false,
+                                    isTabletPortrait = true
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (isLandscape) {
             val landscapeScientific = listOf(
                 listOf("2nd", "deg", "sin"),
                 listOf("cos", "tan", "x^y"),
@@ -343,7 +477,8 @@ fun CalculatorApp(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .clickable {
-                                            expression = entry.expression
+                                            expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression)
+                                            isResultCalculated = true
                                             showHistory = false
                                         }
                                         .padding(vertical = 12.dp, horizontal = 16.dp),
@@ -395,8 +530,8 @@ fun CalculatorApp(
                 }
             }
         } else if (showHistory) {
-            Row(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
-                Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Box(modifier = Modifier.weight(3f).height(400.dp)) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(bottom = 64.dp)
@@ -406,7 +541,8 @@ fun CalculatorApp(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
-                                        expression = entry.expression
+                                        expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression)
+                                        isResultCalculated = true
                                         showHistory = false
                                     }
                                     .padding(vertical = 12.dp, horizontal = 16.dp),
@@ -430,25 +566,22 @@ fun CalculatorApp(
                     }
                 }
                 
-                Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 8.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
+                Box(modifier = Modifier.width(1.dp).height(400.dp).padding(vertical = 8.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
                 
                 Column(
-                    modifier = Modifier.weight(1f).fillMaxHeight()
+                    modifier = Modifier.weight(1f).height(400.dp),
+                    verticalArrangement = Arrangement.SpaceEvenly
                 ) {
                     val ops = listOf("÷", "×", "-", "+", "=")
                     ops.forEach { btn ->
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(vertical = 2.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            CalculatorButton(
-                                text = btn,
-                                onClick = { onAction(btn) },
-                                isScientific = false,
-                                isDark = isDark,
-                                primaryColor = primaryColor
-                            )
-                        }
+                        CalculatorButton(
+                            text = btn,
+                            onClick = { onAction(btn) },
+                            isScientific = false,
+                            isDark = isDark,
+                            primaryColor = primaryColor,
+                            modifier = Modifier.padding(vertical = 2.dp)
+                        )
                     }
                 }
             }
@@ -528,7 +661,7 @@ fun CalculatorApp(
 }
 
 @Composable
-fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = false, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3), modifier: Modifier = Modifier, isLandscape: Boolean = false) {
+fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = false, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3), modifier: Modifier = Modifier, isLandscape: Boolean = false, isTabletPortrait: Boolean = false) {
     val isRed = text == "C"
     val isOperator = text in listOf("÷", "×", "-", "+", "( )", "%")
     val isEqual = text == "="
@@ -551,8 +684,8 @@ fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = 
         else -> if(isDark) Color.White else Color.Black
     }
     
-    val buttonHeight = if (isLandscape) 48.dp else if (isScientific) 56.dp else 84.dp
-    val fontSize = if (isLandscape) 20.sp else if (isScientific) 24.sp else 36.sp
+    val buttonHeight = if (isTabletPortrait) 64.dp else if (isLandscape) 48.dp else if (isScientific) 52.dp else 76.dp
+    val fontSize = if (isTabletPortrait) 24.sp else if (isLandscape) 20.sp else if (isScientific) 24.sp else 36.sp
 
     Box(
         modifier = modifier,
@@ -560,7 +693,14 @@ fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = 
     ) {
         Box(
             modifier = Modifier
-                .then(if (isLandscape) Modifier.fillMaxWidth(0.95f).height(buttonHeight) else Modifier.size(buttonHeight))
+                .then(
+                    if (isTabletPortrait) {
+                        if (text == "0") Modifier.fillMaxWidth(0.95f).height(buttonHeight)
+                        else Modifier.size(buttonHeight)
+                    } else if (isLandscape) {
+                        Modifier.fillMaxWidth(0.95f).height(buttonHeight)
+                    } else Modifier.size(buttonHeight)
+                )
                 .clip(androidx.compose.foundation.shape.RoundedCornerShape(percent = 50))
                 .background(bgColor)
                 .clickable(onClick = onClick),

@@ -1,6 +1,11 @@
+package com.example
+
+import org.junit.Test
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.util.Locale
+
+class FormatTest {
 
 fun formatExpression(expr: String): String {
     val regex = Regex("([0-9]+(,[0-9]*)?)")
@@ -28,12 +33,9 @@ fun formatExpression(expr: String): String {
     }
 }
 
-fun main() {
-    val expr = "13824"
-    val evalResult = 13824.0
-    val df = DecimalFormat("#.########")
-    val resultStr = df.format(evalResult).replace(".", ",")
-    val resultPreview = formatExpression(resultStr)
-    println("Italian Locale: " + formatExpression(DecimalFormat("#.########", DecimalFormatSymbols(Locale.ITALY)).format(13824.0).replace(".", ",")))
-    println("US Locale: " + formatExpression(DecimalFormat("#.########", DecimalFormatSymbols(Locale.US)).format(13824.0).replace(".", ",")))
+    @Test
+    fun testFormat() {
+        println("Italian Locale: " + formatExpression(DecimalFormat("#.########", DecimalFormatSymbols(Locale.ITALY)).format(13824.0).replace(".", ",")))
+        println("US Locale: " + formatExpression(DecimalFormat("#.########", DecimalFormatSymbols(Locale.US)).format(13824.0).replace(".", ",")))
+    }
 }
