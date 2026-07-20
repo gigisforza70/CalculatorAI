@@ -107,7 +107,7 @@ fun CalculatorApp(
 
     var screen by remember { mutableStateOf("calculator") }
     if (screen == "converter") {
-        UnitConverterScreen(
+        UnitConverterScreen(modifier = modifier, 
             onBack = { screen = "calculator" },
             isDark = isDark,
             primaryColor = primaryColor
@@ -179,10 +179,10 @@ fun CalculatorApp(
                     }
                     if (i >= 1 && expression.text[i] == '-' && expression.text[i-1] == '(') {
                         // It was "(-", let's remove it
-                        expression = androidx.compose.ui.text.input.TextFieldValue(expression.text.substring(0, i - 1) + expression.text.substring(i + 1))
+                        expression = androidx.compose.ui.text.input.TextFieldValue(expression.text.substring(0, i - 1) + expression.text.substring(i + 1), androidx.compose.ui.text.TextRange(i - 1))
                     } else {
                         // Insert "(-"
-                        expression = androidx.compose.ui.text.input.TextFieldValue(expression.text.substring(0, i + 1) + "(-" + expression.text.substring(i + 1))
+                        expression = androidx.compose.ui.text.input.TextFieldValue(expression.text.substring(0, i + 1) + "(-" + expression.text.substring(i + 1), androidx.compose.ui.text.TextRange(i + 3))
                     }
                 }
             }
@@ -269,7 +269,7 @@ fun CalculatorApp(
                             if (newText.length > oldText.length) {
                                 val addedChar = newText.substring(oldText.length)
                                 if (addedChar.matches(Regex("[0-9.,]"))) {
-                                    expression = androidx.compose.ui.text.input.TextFieldValue(addedChar)
+                                    expression = androidx.compose.ui.text.input.TextFieldValue(addedChar, androidx.compose.ui.text.TextRange(addedChar.length))
                                     return@BasicTextField
                                 }
                             }
@@ -297,8 +297,8 @@ fun CalculatorApp(
                     ),
                     singleLine = true,
                     readOnly = false, // To prevent soft keyboard from popping up
-                    visualTransformation = ExpressionVisualTransformation(),
-                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).focusRequester(focusRequester),
+                    
+                    modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor)
                 )
                 }
