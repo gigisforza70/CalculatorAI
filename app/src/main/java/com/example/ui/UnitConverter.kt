@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.background
@@ -27,13 +28,13 @@ import androidx.compose.ui.text.TextRange
 
 enum class UnitCategory { Length, Area, Temperature, Volume, Mass, Data }
 
-data class UnitType(val name: String, val value: Double)
+data class UnitType(val name: String, val value: Double, val symbol: String)
 
-val lengthUnits = listOf(UnitType("Nanometers", 1e-9), UnitType("Micrometers", 1e-6), UnitType("Millimeters", 0.001), UnitType("Centimeters", 0.01), UnitType("Decimeters", 0.1), UnitType("Meters", 1.0), UnitType("Kilometers", 1000.0), UnitType("Inches", 0.0254), UnitType("Feet", 0.3048), UnitType("Yards", 0.9144), UnitType("Miles", 1609.344), UnitType("Nautical miles", 1852.0))
-val areaUnits = listOf(UnitType("Square millimeters", 0.000001), UnitType("Square centimeters", 0.0001), UnitType("Square meters", 1.0), UnitType("Hectares", 10000.0), UnitType("Square kilometers", 1000000.0), UnitType("Square inches", 0.00064516), UnitType("Square feet", 0.09290304), UnitType("Square yards", 0.83612736), UnitType("Acres", 4046.8564224), UnitType("Square miles", 2589988.110336))
-val volumeUnits = listOf(UnitType("Milliliters", 0.001), UnitType("Cubic centimeters", 0.001), UnitType("Liters", 1.0), UnitType("Cubic meters", 1000.0), UnitType("Teaspoons (US)", 0.00492892), UnitType("Tablespoons (US)", 0.0147868), UnitType("Fluid ounces (US)", 0.0295735), UnitType("Cups (US)", 0.236588), UnitType("Pints (US)", 0.473176), UnitType("Quarts (US)", 0.946353), UnitType("Gallons (US)", 3.78541), UnitType("Cubic inches", 0.0163871), UnitType("Cubic feet", 28.3168))
-val massUnits = listOf(UnitType("Micrograms", 1e-9), UnitType("Milligrams", 1e-6), UnitType("Grams", 0.001), UnitType("Kilograms", 1.0), UnitType("Metric tonnes", 1000.0), UnitType("Ounces", 0.0283495), UnitType("Pounds", 0.453592), UnitType("Stones", 6.35029), UnitType("Short tons (US)", 907.185), UnitType("Long tons (UK)", 1016.05))
-val dataUnits = listOf(UnitType("Bits", 0.125), UnitType("Bytes", 1.0), UnitType("Kilobits", 128.0), UnitType("Kilobytes", 1024.0), UnitType("Megabits", 131072.0), UnitType("Megabytes", 1048576.0), UnitType("Gigabits", 134217728.0), UnitType("Gigabytes", 1073741824.0), UnitType("Terabits", 137438953472.0), UnitType("Terabytes", 1099511627776.0), UnitType("Petabytes", 1125899906842624.0))
+val lengthUnits = listOf(UnitType("Nanometers", 1e-9, "nm"), UnitType("Micrometers", 1e-6, "μm"), UnitType("Millimeters", 0.001, "mm"), UnitType("Centimeters", 0.01, "cm"), UnitType("Decimeters", 0.1, "dm"), UnitType("Meters", 1.0, "m"), UnitType("Kilometers", 1000.0, "km"), UnitType("Inches", 0.0254, "in"), UnitType("Feet", 0.3048, "ft"), UnitType("Yards", 0.9144, "yd"), UnitType("Miles", 1609.344, "mi"), UnitType("Nautical miles", 1852.0, "NM"))
+val areaUnits = listOf(UnitType("Square millimeters", 0.000001, "mm²"), UnitType("Square centimeters", 0.0001, "cm²"), UnitType("Square meters", 1.0, "m²"), UnitType("Hectares", 10000.0, "ha"), UnitType("Square kilometers", 1000000.0, "km²"), UnitType("Square inches", 0.00064516, "sq in"), UnitType("Square feet", 0.09290304, "sq ft"), UnitType("Square yards", 0.83612736, "sq yd"), UnitType("Acres", 4046.8564224, "ac"), UnitType("Square miles", 2589988.110336, "sq mi"))
+val volumeUnits = listOf(UnitType("Milliliters", 0.001, "ml"), UnitType("Cubic centimeters", 0.001, "cm³"), UnitType("Liters", 1.0, "l"), UnitType("Cubic meters", 1000.0, "m³"), UnitType("Teaspoons (US)", 0.00492892, "tsp"), UnitType("Tablespoons (US)", 0.0147868, "tbsp"), UnitType("Fluid ounces (US)", 0.0295735, "fl oz"), UnitType("Cups (US)", 0.236588, "c"), UnitType("Pints (US)", 0.473176, "pt"), UnitType("Quarts (US)", 0.946353, "qt"), UnitType("Gallons (US)", 3.78541, "gal"), UnitType("Cubic inches", 0.0163871, "cu in"), UnitType("Cubic feet", 28.3168, "cu ft"))
+val massUnits = listOf(UnitType("Micrograms", 1e-9, "μg"), UnitType("Milligrams", 1e-6, "mg"), UnitType("Grams", 0.001, "g"), UnitType("Kilograms", 1.0, "kg"), UnitType("Metric tonnes", 1000.0, "t"), UnitType("Ounces", 0.0283495, "oz"), UnitType("Pounds", 0.453592, "lb"), UnitType("Stones", 6.35029, "st"), UnitType("Short tons (US)", 907.185, "ton"), UnitType("Long tons (UK)", 1016.05, "ton"))
+val dataUnits = listOf(UnitType("Bits", 0.125, "bit"), UnitType("Bytes", 1.0, "B"), UnitType("Kilobits", 128.0, "kb"), UnitType("Kilobytes", 1024.0, "KB"), UnitType("Megabits", 131072.0, "Mb"), UnitType("Megabytes", 1048576.0, "MB"), UnitType("Gigabits", 134217728.0, "Gb"), UnitType("Gigabytes", 1073741824.0, "GB"), UnitType("Terabits", 137438953472.0, "Tb"), UnitType("Terabytes", 1099511627776.0, "TB"), UnitType("Petabytes", 1125899906842624.0, "PB"))
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,6 +51,8 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
     var expanded1 by remember { mutableStateOf(false) }
     var expanded2 by remember { mutableStateOf(false) }
 
+    BackHandler(onBack = onBack)
+
     val currentUnitsList = remember(selectedCategory) {
         when(selectedCategory) {
             UnitCategory.Length -> lengthUnits
@@ -57,7 +60,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
             UnitCategory.Volume -> volumeUnits
             UnitCategory.Mass -> massUnits
             UnitCategory.Data -> dataUnits
-            UnitCategory.Temperature -> listOf(UnitType("Celsius", 1.0), UnitType("Fahrenheit", 1.0), UnitType("Kelvin", 1.0))
+            UnitCategory.Temperature -> listOf(UnitType("Celsius", 1.0, "°C"), UnitType("Fahrenheit", 1.0, "°F"), UnitType("Kelvin", 1.0, "K"))
         }
     }
 
@@ -101,15 +104,18 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
                     text = "-" + text
                 }
             }
-        } else if (action == ",") {
+                } else if (action == ",") {
             if (!text.contains(",")) {
                 text += ","
             }
         } else {
-            if (text == "0" && action != ",") {
-                text = action
-            } else {
-                text += action
+            val digitCount = text.count { it.isDigit() }
+            if (digitCount < 15) {
+                if (text == "0" && action != ",") {
+                    text = action
+                } else {
+                    text += action
+                }
             }
         }
         val newField = TextFieldValue(text, TextRange(text.length))
@@ -311,7 +317,7 @@ fun Input1(
             expanded = expanded1,
             onExpandedChange = { onExpanded1Change(!expanded1) }
         ) {
-            Row(modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = unit1.name,
                     color = if(focus1) primaryColor else secondaryTextColor,
@@ -338,26 +344,37 @@ fun Input1(
             }
         }
         
-        androidx.compose.ui.platform.InterceptPlatformTextInput(
-            interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
-        ) {
-            androidx.compose.foundation.text.BasicTextField(
-                value = value1,
-                onValueChange = { newValue ->
-                    if (newValue.text.matches(Regex("[0-9.,-]*"))) {
-                        onValue1Change(newValue)
+        androidx.compose.foundation.text.BasicTextField(
+            value = value1,
+            onValueChange = { newValue ->
+                if (newValue.text.matches(Regex("[0-9.,-]*")) && newValue.text.count { it.isDigit() } <= 15) {
+                    onValue1Change(newValue)
+                }
+            },
+            textStyle = androidx.compose.ui.text.TextStyle(
+                fontSize = 48.sp,
+                color = if(focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
+            ),
+            singleLine = true,
+            readOnly = true,
+            visualTransformation = ExpressionVisualTransformation(),
+            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
+            decorationBox = { innerTextField ->
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        innerTextField()
                     }
-                },
-                textStyle = androidx.compose.ui.text.TextStyle(
-                    fontSize = 48.sp,
-                    color = if(focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
-                ),
-                singleLine = true,
-                readOnly = false,
-                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor)
-            )
-        }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = unit1.symbol,
+                        fontSize = 24.sp,
+                        color = if(focus1) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+            }
+        )
     }
 }
 
@@ -385,7 +402,7 @@ fun Input2(
             expanded = expanded2,
             onExpandedChange = { onExpanded2Change(!expanded2) }
         ) {
-            Row(modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     text = unit2.name,
                     color = if(!focus1) primaryColor else secondaryTextColor,
@@ -412,26 +429,37 @@ fun Input2(
             }
         }
         
-        androidx.compose.ui.platform.InterceptPlatformTextInput(
-            interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
-        ) {
-            androidx.compose.foundation.text.BasicTextField(
-                value = value2,
-                onValueChange = { newValue ->
-                    if (newValue.text.matches(Regex("[0-9.,-]*"))) {
-                        onValue2Change(newValue)
+        androidx.compose.foundation.text.BasicTextField(
+            value = value2,
+            onValueChange = { newValue ->
+                if (newValue.text.matches(Regex("[0-9.,-]*")) && newValue.text.count { it.isDigit() } <= 15) {
+                    onValue2Change(newValue)
+                }
+            },
+            textStyle = androidx.compose.ui.text.TextStyle(
+                fontSize = 48.sp,
+                color = if(!focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
+            ),
+            singleLine = true,
+            readOnly = true,
+            visualTransformation = ExpressionVisualTransformation(),
+            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
+            cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
+            decorationBox = { innerTextField ->
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Box(modifier = Modifier.weight(1f, fill = false)) {
+                        innerTextField()
                     }
-                },
-                textStyle = androidx.compose.ui.text.TextStyle(
-                    fontSize = 48.sp,
-                    color = if(!focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
-                ),
-                singleLine = true,
-                readOnly = false,
-                modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
-                cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor)
-            )
-        }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = unit2.symbol,
+                        fontSize = 24.sp,
+                        color = if(!focus1) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)),
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+            }
+        )
     }
 }
 
