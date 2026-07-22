@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 package com.example
 
 import android.os.Bundle
@@ -252,6 +253,9 @@ fun CalculatorApp(
                     try { focusRequester.requestFocus() } catch (e: Exception) {}
                 }
                 
+                androidx.compose.ui.platform.InterceptPlatformTextInput(
+                    interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
+                ) {
                 androidx.compose.foundation.text.BasicTextField(
                     value = expression,
                     onValueChange = { newValue ->
@@ -294,11 +298,12 @@ fun CalculatorApp(
                         textAlign = TextAlign.End
                     ),
                     singleLine = true,
-                    readOnly = true, // To prevent soft keyboard from popping up
+                    readOnly = false, // To prevent soft keyboard from popping up
                     visualTransformation = com.example.ui.ExpressionVisualTransformation(),
                     modifier = Modifier.fillMaxWidth().focusRequester(focusRequester),
                     cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor)
                 )
+                }
 
                 
                 Spacer(modifier = Modifier.weight(1f))
@@ -330,7 +335,7 @@ fun CalculatorApp(
                 }
                 if (!isLandscape && !isTabletPortrait) {
                     IconButton(onClick = { isScientific = !isScientific }) {
-                        Icon(imageVector = Icons.Default.Science, contentDescription = "Scientific", tint = if (isScientific) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)))
+                        Icon(imageVector = Icons.Default.Calculate, contentDescription = "Scientific", tint = if (isScientific) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)))
                     }
                 }
                 IconButton(onClick = onThemeToggle) {
@@ -362,7 +367,7 @@ fun CalculatorApp(
                             }
                         }
                     }) {
-                        Icon(imageVector = androidx.compose.material.icons.Icons.Default.Calculate, contentDescription = "Floating Window", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
+                        Icon(painter = androidx.compose.ui.res.painterResource(R.drawable.ic_float_window), contentDescription = "Floating Window", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
                     }
                 }
             }
@@ -380,15 +385,15 @@ fun CalculatorApp(
         Spacer(modifier = Modifier.height(8.dp))
 
         // Keypad
-        if (isTabletPortrait) {
-            val landscapeScientific = listOf(
-                listOf("2nd", "deg", "sin"),
-                listOf("cos", "tan", "x^y"),
-                listOf("lg", "ln", "x²"),
-                listOf("|x|", "√x", "x!"),
-                listOf("1/x", "π", "e")
+                if (isTabletPortrait) {
+            val scientificKeys = listOf(
+                listOf("sin", "cos", "tan", "^"),
+                listOf("asn", "acs", "atn", "!"),
+                listOf("snh", "csh", "tnh", "√"),
+                listOf("ash", "ach", "ath", "π"),
+                listOf("ln", "lg", "g", "e")
             )
-            val landscapeStandard = listOf(
+            val standardKeys = listOf(
                 listOf("C", "( )", "%", "÷"),
                 listOf("7", "8", "9", "×"),
                 listOf("4", "5", "6", "-"),
@@ -396,84 +401,8 @@ fun CalculatorApp(
                 listOf("+/-", "0", ",", "=")
             )
             Row(modifier = Modifier.fillMaxWidth().weight(1.5f), horizontalArrangement = Arrangement.SpaceBetween) {
-                // Left side (Scientific or History)
-                Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
-                    if (showHistory) {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize(),
-                            contentPadding = PaddingValues(bottom = 64.dp)
-                        ) {
-                            items(history) { entry ->
-                                Column(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable {
-                                            expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression, androidx.compose.ui.text.TextRange(entry.expression.length))
-                                            isResultCalculated = true
-                                            showHistory = false
-                                        }
-                                        .padding(vertical = 12.dp, horizontal = 16.dp),
-                                    horizontalAlignment = Alignment.End
-                                ) {
-                                    Text(text = formatExpression(entry.expression), color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070), fontSize = 16.sp)
-                                    Spacer(modifier = Modifier.height(4.dp))
-                                    Text(text = "=" + formatExpression(entry.result), color = primaryColor, fontSize = 24.sp, fontWeight = FontWeight.Medium)
-                                }
-                            }
-                        }
-                        androidx.compose.material3.Button(
-                            onClick = { viewModel.clearHistory() },
-                            modifier = Modifier
-                                .align(Alignment.BottomCenter)
-                                .fillMaxWidth(0.7f)
-                                .padding(bottom = 8.dp),
-                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)),
-                            shape = CircleShape
-                        ) {
-                            Text("Clear history", color = if(isDark) Color.White else Color.Black, fontSize = 14.sp)
-                        }
-                    } else {
-                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
-                            landscapeScientific.forEach { row ->
-                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    row.forEach { btn ->
-                                        CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isTabletPortrait = true)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-                   
-                Spacer(modifier = Modifier.width(8.dp))
-                Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark && !showHistory) Color(0xFF2B2B2B) else if (!isDark && !showHistory) Color(0xFFE0E0E0) else Color.Transparent))
-                Spacer(modifier = Modifier.width(8.dp))
-
-                // Center side (Standard Keypad)
-                Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
-                    landscapeStandard.forEach { row ->
-                        Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                            row.forEach { btn ->
-                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isTabletPortrait = true)
-                            }
-                        }
-                    }
-                }
-
-                // Right side (Empty space to balance the left side)
-                Box(modifier = Modifier.weight(3f).fillMaxHeight())
-            }
-        } else if (isTabletLandscape) {
-            val tabletPortraitKeys = listOf(
-                listOf("sin", "cos", "tan", "^", "C", "( )", "%", "÷"),
-                listOf("asn", "acs", "atn", "!", "7", "8", "9", "×"),
-                listOf("snh", "csh", "tnh", "√", "4", "5", "6", "-"),
-                listOf("ash", "ach", "ath", "π", "1", "2", "3", "+"),
-                listOf("ln", "lg", "g", "e", "+/-", "0", ",", "=")
-            )
-            Row(modifier = Modifier.fillMaxWidth().weight(1.5f), horizontalArrangement = Arrangement.Center) {
+                // Left side: History OR Scientific Keys
                 if (showHistory) {
-                    // Left side (History permanently shown) -> Now toggleable
                     Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                         if (history.isEmpty()) {
                             Text(
@@ -517,43 +446,127 @@ fun CalculatorApp(
                             }
                         }
                     }
-                       
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
-                    Spacer(modifier = Modifier.width(16.dp))
                 } else {
-                    Spacer(modifier = Modifier.weight(0.5f))
-                    Spacer(modifier = Modifier.width(16.5.dp))
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+                        scientificKeys.forEach { row ->
+                            Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                                row.forEach { btn ->
+                                    CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), isTabletPortrait = true)
+                                }
+                            }
+                        }
+                    }
                 }
-                   
-                // Right side (tablet portrait keys layout) -> Now Center side
-                Column(modifier = Modifier.weight(2.5f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
-                    tabletPortraitKeys.forEach { row ->
-                        Row(
-                            modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp),
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                
+                // Divider if history is shown (optional, but looks good)
+                if (showHistory) {
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                
+                // Right side: Standard Keys
+                Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+                    standardKeys.forEach { row ->
+                        Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
                             row.forEach { btn ->
-                                CalculatorButton(
-                                    text = btn,
-                                    onClick = { onAction(btn) },
-                                    isScientific = true,
-                                    isDark = isDark,
-                                    primaryColor = primaryColor,
-                                    modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-                                    isLandscape = false,
-                                    isTabletPortrait = true
-                                )
+                                val isNumOrOp = btn in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "+/-", "+", "-", "×", "÷", "=", "C", "%", "( )")
+                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = !isNumOrOp, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), isTabletPortrait = true)
+                            }
+                        }
+                    }
+                }
+            }
+        } else if (isTabletLandscape) {            val landscapeScientific = listOf(
+                listOf("2nd", "deg", "sin"),
+                listOf("cos", "tan", "x^y"),
+                listOf("lg", "ln", "x²"),
+                listOf("|x|", "√x", "x!"),
+                listOf("1/x", "π", "e")
+            )
+            val landscapeStandard = listOf(
+                listOf("C", "( )", "%", "÷"),
+                listOf("7", "8", "9", "×"),
+                listOf("4", "5", "6", "-"),
+                listOf("1", "2", "3", "+"),
+                listOf("+/-", "0", ",", "=")
+            )
+            Row(modifier = Modifier.fillMaxWidth().weight(1.5f), horizontalArrangement = Arrangement.SpaceBetween) {
+                // Left side (Scientific or History)
+                Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
+                    if (showHistory) {
+                        if (history.isEmpty()) {
+                            Text(
+                                "Qui vedrai la cronologia\ndei calcoli.",
+                                textAlign = TextAlign.Center,
+                                color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
+                                modifier = Modifier.align(Alignment.Center)
+                            )
+                        } else {
+                            LazyColumn(
+                                modifier = Modifier.fillMaxSize(),
+                                contentPadding = PaddingValues(bottom = 64.dp)
+                            ) {
+                                items(history) { entry ->
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable {
+                                                expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression, androidx.compose.ui.text.TextRange(entry.expression.length))
+                                                isResultCalculated = true
+                                            }
+                                            .padding(vertical = 12.dp, horizontal = 16.dp),
+                                        horizontalAlignment = Alignment.End
+                                    ) {
+                                        Text(text = formatExpression(entry.expression), color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070), fontSize = 16.sp)
+                                        Spacer(modifier = Modifier.height(4.dp))
+                                        Text(text = "=" + formatExpression(entry.result), color = primaryColor, fontSize = 24.sp, fontWeight = FontWeight.Medium)
+                                    }
+                                }
+                            }
+                            androidx.compose.material3.Button(
+                                onClick = { viewModel.clearHistory() },
+                                modifier = Modifier
+                                    .align(Alignment.BottomCenter)
+                                    .fillMaxWidth(0.7f)
+                                    .padding(bottom = 8.dp),
+                                colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)),
+                                shape = CircleShape
+                            ) {
+                                Text("Clear history", color = if(isDark) Color.White else Color.Black, fontSize = 14.sp)
+                            }
+                        }
+                    } else {
+                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
+                            landscapeScientific.forEach { row ->
+                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    row.forEach { btn ->
+                                        CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isLandscape = true)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                    
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark && !showHistory) Color(0xFF2B2B2B) else if (!isDark && !showHistory) Color(0xFFE0E0E0) else Color.Transparent))
+                Spacer(modifier = Modifier.width(8.dp))
+
+                // Center side (Standard Keypad)
+                Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+                    landscapeStandard.forEach { row ->
+                        Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            row.forEach { btn ->
+                                val isNumOrOp = btn in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "+/-", "+", "-", "×", "÷", "=", "C", "%", "( )")
+                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = !isNumOrOp, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isLandscape = true)
                             }
                         }
                     }
                 }
 
-                if (!showHistory) {
-                    Spacer(modifier = Modifier.width(16.5.dp))
-                    Spacer(modifier = Modifier.weight(0.5f))
-                }
+                // Right side (Empty space to balance the left side)
+                Box(modifier = Modifier.weight(3f).fillMaxHeight())
             }
         } else if (isLandscape) {
             val landscapeScientific = listOf(
@@ -621,177 +634,151 @@ fun CalculatorApp(
                 }
                 
                 Spacer(modifier = Modifier.width(8.dp))
-                Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
+                Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark && !showHistory) Color(0xFF2B2B2B) else if (!isDark && !showHistory) Color(0xFFE0E0E0) else Color.Transparent))
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Right side (Standard Keypad)
+                // Center side (Standard Keypad)
                 Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
                     landscapeStandard.forEach { row ->
                         Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                             row.forEach { btn ->
-                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isLandscape = true)
+                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isLandscape = true)
                             }
                         }
                     }
                 }
-            }
-        } else if (showHistory) {
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Box(modifier = Modifier.weight(3f).height(400.dp)) {
-                    LazyColumn(
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 64.dp)
-                    ) {
-                        items(history) { entry ->
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression, androidx.compose.ui.text.TextRange(entry.expression.length))
-                                        isResultCalculated = true
-                                        showHistory = false
-                                    }
-                                    .padding(vertical = 12.dp, horizontal = 16.dp),
-                                horizontalAlignment = Alignment.End
-                            ) {
-                                Text(text = formatExpression(entry.expression), color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070), fontSize = 24.sp)
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(text = "=" + formatExpression(entry.result), color = primaryColor, fontSize = 32.sp, fontWeight = FontWeight.Medium)
-                            }
-                        }
-                    }
-                    androidx.compose.material3.Button(
-                        onClick = { viewModel.clearHistory() },
-                        modifier = Modifier
-                            .align(Alignment.BottomCenter)
-                            .padding(bottom = 16.dp),
-                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)),
-                        shape = CircleShape
-                    ) {
-                        Text("Clear history", color = if(isDark) Color.White else Color.Black, fontSize = 16.sp)
-                    }
-                }
-                
-                Box(modifier = Modifier.width(1.dp).height(400.dp).padding(vertical = 8.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
-                
-                Column(
-                    modifier = Modifier.weight(1f).height(400.dp),
-                    verticalArrangement = Arrangement.SpaceEvenly
-                ) {
-                    val ops = listOf("÷", "×", "-", "+", "=")
-                    ops.forEach { btn ->
-                        CalculatorButton(
-                            text = btn,
-                            onClick = { onAction(btn) },
-                            isScientific = false,
-                            isDark = isDark,
-                            primaryColor = primaryColor,
-                            modifier = Modifier.padding(vertical = 2.dp)
-                        )
-                    }
-                }
+
+                // Right side (Empty space to balance the left side)
+                Box(modifier = Modifier.weight(3f).fillMaxHeight())
             }
         } else {
-            val standardButtons = listOf(
+            // Standard portrait layout
+            val portraitKeys = listOf(
                 listOf("C", "( )", "%", "÷"),
                 listOf("7", "8", "9", "×"),
                 listOf("4", "5", "6", "-"),
                 listOf("1", "2", "3", "+"),
                 listOf("+/-", "0", ",", "=")
             )
-            
-            val scientificButtons = listOf(
-                listOf("2nd", "deg", "sin", "cos", "tan"),
-                listOf("x^y", "lg", "ln", "x²", "|x|"),
-                listOf("√x", "C", "( )", "%", "÷"),
-                listOf("x!", "7", "8", "9", "×"),
-                listOf("1/x", "4", "5", "6", "-"),
-                listOf("π", "1", "2", "3", "+"),
-                listOf("switch", "e", "0", ",", "=")
+            val portraitScientificKeys = listOf(
+                listOf("sin", "cos", "tan", "lg", "ln"),
+                listOf("x^y", "x²", "√x", "1/x", "|x|"),
+                listOf("C", "( )", "%", "÷", "x!"),
+                listOf("7", "8", "9", "×", "π"),
+                listOf("4", "5", "6", "-", "e"),
+                listOf("1", "2", "3", "+", "2nd"),
+                listOf("+/-", "0", ",", "=", "deg")
             )
-    
-            val buttons = if (isScientific) scientificButtons else standardButtons
-    
-            buttons.forEach { row ->
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    row.forEach { btn ->
-                        if (btn == "backspace") {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                IconButton(onClick = { onAction("backspace") }, modifier = Modifier.size(if (isScientific) 56.dp else 72.dp)) {
-                                    Icon(Icons.AutoMirrored.Filled.Backspace, "Backspace", tint = primaryColor)
-                                }
-                            }
-                        } else if (btn == "switch") {
-                            Box(
-                                modifier = Modifier
-                                    .weight(1f),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
+            Row(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
+                // Left side: History or Scientific or Digits
+                Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
+                    if (showHistory) {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(bottom = 64.dp)
+                        ) {
+                            items(history) { entry ->
+                                Column(
                                     modifier = Modifier
-                                        .size(if (isScientific) 56.dp else 72.dp)
-                                        .clip(CircleShape)
-                                        .background(if(isDark) Color(0xFF212121) else Color(0xFFE0E0E0))
-                                        .clickable { isScientific = false },
-                                    contentAlignment = Alignment.Center
+                                        .fillMaxWidth()
+                                        .clickable {
+                                            expression = androidx.compose.ui.text.input.TextFieldValue(entry.expression, androidx.compose.ui.text.TextRange(entry.expression.length))
+                                            isResultCalculated = true
+                                            showHistory = false
+                                        }
+                                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                                    horizontalAlignment = Alignment.End
                                 ) {
-                                    Icon(Icons.Default.Calculate, "Standard Calculator", tint = primaryColor)
+                                    Text(text = formatExpression(entry.expression), color = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070), fontSize = 16.sp)
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(text = "=" + formatExpression(entry.result), color = primaryColor, fontSize = 24.sp, fontWeight = FontWeight.Medium)
                                 }
                             }
-                        } else {
-                            CalculatorButton(
-                                text = btn,
-                                onClick = { onAction(btn) },
-                                isScientific = isScientific,
-                                isDark = isDark,
-                                primaryColor = primaryColor,
-                                modifier = Modifier.weight(1f)
-                            )
+                        }
+                        androidx.compose.material3.Button(
+                            onClick = { viewModel.clearHistory() },
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .fillMaxWidth(0.7f)
+                                .padding(bottom = 8.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(containerColor = if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)),
+                            shape = CircleShape
+                        ) {
+                            Text("Clear history", color = if(isDark) Color.White else Color.Black, fontSize = 14.sp)
+                        }
+                    } else if (isScientific) {
+                        val scientificLeftKeys = listOf(
+                            listOf("sin", "cos", "tan"),
+                            listOf("ln", "lg", "x^y"),
+                            listOf("√x", "x²", "|x|"),
+                            listOf("1/x", "π", "e"),
+                            listOf("2nd", "deg", "x!")
+                        )
+                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
+                            scientificLeftKeys.forEach { row ->
+                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                                    row.forEach { btn ->
+                                        CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), isPortraitScientific = true)
+                                    }
+                                }
+                            }
+                        }
+                    } else {
+                        val standardLeftKeys = listOf(
+                            listOf("C", "( )", "%"),
+                            listOf("7", "8", "9"),
+                            listOf("4", "5", "6"),
+                            listOf("1", "2", "3"),
+                            listOf("+/-", "0", ",")
+                        )
+                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
+                            standardLeftKeys.forEach { row ->
+                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                                    row.forEach { btn ->
+                                        CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                
+                Spacer(modifier = Modifier.width(4.dp))
+                
+                // Right side: Operators
+                Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+                    val operatorKeys = listOf("÷", "×", "-", "+", "=")
+                    operatorKeys.forEach { btn ->
+                        Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                            CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
                         }
                     }
                 }
             }
-        }
+                }
+            }
         }
     }
-}
 
 @Composable
-fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = false, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3), modifier: Modifier = Modifier, isLandscape: Boolean = false, isTabletPortrait: Boolean = false) {
+fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = false, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3), modifier: Modifier = Modifier, isLandscape: Boolean = false, isTabletPortrait: Boolean = false, isPortraitScientific: Boolean = false) {
     val isRed = text == "C"
     val isOperator = text in listOf("÷", "×", "-", "+", "( )", "%")
     val isEqual = text == "="
-    val isScientificKey = text in listOf("2nd", "deg", "sin", "cos", "tan", "x^y", "lg", "ln", "x²", "|x|", "√x", "x!", "1/x", "π", "e")
+    
+    val bgColor = if (isEqual) primaryColor
+        else if (isRed) (if (isDark) Color(0xFF3A2121) else Color(0xFFFFEAEA))
+        else if (isOperator) (if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
+        else if (isScientific) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFF0F0F0))
+        else (if (isDark) Color(0xFF222222) else Color(0xFFF5F5F5))
+        
+    val textColor = if (isEqual) Color.White
+        else if (isRed) Color(0xFFE57373)
+        else if (isOperator) primaryColor
+        else if (isDark) Color.White else Color.Black
 
-    val isNumber = text in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ",", "+/-")
-    val bgColor = when {
-        isEqual -> primaryColor
-        isOperator -> if(isDark) Color(0xFF2B2B2B) else Color(0xFFD0D0D0)
-        isRed -> if(isDark) Color(0xFF2B2B2B) else Color(0xFFD0D0D0)
-        isScientificKey -> if(isDark) Color(0xFF212121) else Color(0xFFD8D8D8)
-        else -> if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)
-    }
-    
-    val textColor = when {
-        isRed -> primaryColor
-        isEqual -> Color.White
-        isOperator -> primaryColor
-        isScientificKey -> if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)
-        else -> if(isDark) Color.White else Color.Black
-    }
-    
-    val buttonHeight = if (isTabletPortrait) 64.dp else if (isLandscape) 48.dp else if (isScientific) 52.dp else 76.dp
-    val fontSize = if (isTabletPortrait) 24.sp else if (isLandscape) 20.sp else if (isScientific) 24.sp else 36.sp
+    val buttonHeight = if (isTabletPortrait) 64.dp else if (isLandscape) 48.dp else if (isPortraitScientific) 52.dp else if (isScientific) 52.dp else 76.dp
+    val fontSize = if (isTabletPortrait) 24.sp else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
 
     Box(
         modifier = modifier,
@@ -801,7 +788,7 @@ fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = 
             modifier = Modifier
                 .then(
                     if (isTabletPortrait) {
-                        Modifier.size(buttonHeight)
+                        Modifier.fillMaxWidth(0.95f).height(buttonHeight)
                     } else if (isLandscape) {
                         Modifier.fillMaxWidth(0.95f).height(buttonHeight)
                     } else {

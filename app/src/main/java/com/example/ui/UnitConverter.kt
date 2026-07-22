@@ -1,3 +1,4 @@
+@file:OptIn(androidx.compose.ui.ExperimentalComposeUiApi::class)
 package com.example.ui
 
 import androidx.activity.compose.BackHandler
@@ -344,6 +345,9 @@ fun Input1(
             }
         }
         
+        androidx.compose.ui.platform.InterceptPlatformTextInput(
+                    interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
+                ) {
         androidx.compose.foundation.text.BasicTextField(
             value = value1,
             onValueChange = { newValue ->
@@ -356,7 +360,7 @@ fun Input1(
                 color = if(focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
             ),
             singleLine = true,
-            readOnly = true,
+            readOnly = false,
             visualTransformation = ExpressionVisualTransformation(),
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
             cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
@@ -375,6 +379,7 @@ fun Input1(
                 }
             }
         )
+        }
     }
 }
 
@@ -429,6 +434,9 @@ fun Input2(
             }
         }
         
+        androidx.compose.ui.platform.InterceptPlatformTextInput(
+                    interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
+                ) {
         androidx.compose.foundation.text.BasicTextField(
             value = value2,
             onValueChange = { newValue ->
@@ -441,7 +449,7 @@ fun Input2(
                 color = if(!focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
             ),
             singleLine = true,
-            readOnly = true,
+            readOnly = false,
             visualTransformation = ExpressionVisualTransformation(),
             modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
             cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
@@ -460,6 +468,7 @@ fun Input2(
                 }
             }
         )
+        }
     }
 }
 

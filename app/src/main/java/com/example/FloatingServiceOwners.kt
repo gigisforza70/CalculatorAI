@@ -19,6 +19,7 @@ class FloatingServiceOwners : SavedStateRegistryOwner, ViewModelStoreOwner {
     override val viewModelStore: ViewModelStore get() = store
 
     fun onCreate() {
+        savedStateRegistryController.performAttach()
         savedStateRegistryController.performRestore(null)
         lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
     }

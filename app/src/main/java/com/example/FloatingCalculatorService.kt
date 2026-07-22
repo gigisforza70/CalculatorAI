@@ -54,42 +54,44 @@ class FloatingCalculatorService : Service() {
             setViewTreeLifecycleOwner(owners)
             setViewTreeSavedStateRegistryOwner(owners)
             setViewTreeViewModelStoreOwner(owners)
-            
-            setContent {
-                MaterialTheme(colorScheme = darkColorScheme()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(Color(0xFF141414))
-                            .border(1.dp, Color(0xFF333333), RoundedCornerShape(16.dp))
-                    ) {
-                        Column {
-                            // Top Bar for dragging
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(48.dp)
-                                    .background(Color(0xFF222222)),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(modifier = Modifier.weight(1f))
-                                IconButton(onClick = { openMainActivity() }) {
-                                    Icon(Icons.Default.Calculate, contentDescription = "Expand", tint = Color.White)
+                        val factory = androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.getInstance(application)
+                        val viewModel = androidx.lifecycle.ViewModelProvider(owners, factory)[com.example.viewmodel.CalculatorViewModel::class.java]
+
+                        setContent {
+                            MaterialTheme(colorScheme = darkColorScheme()) {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(RoundedCornerShape(16.dp))
+                                        .background(Color(0xFF141414))
+                                        .border(1.dp, Color(0xFF333333), RoundedCornerShape(16.dp))
+                                ) {
+                                    Column {
+                                        // Top Bar for dragging
+                                        Row(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp)
+                                                .background(Color(0xFF222222)),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Box(modifier = Modifier.weight(1f))
+                                            IconButton(onClick = { openMainActivity() }) {
+                                                Icon(Icons.Default.Calculate, contentDescription = "Expand", tint = Color.White)
+                                            }
+                                            IconButton(onClick = { stopSelf() }) {
+                                                Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
+                                            }
+                                        }
+                                        
+                                        // The calculator UI
+                                        Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                                            com.example.CalculatorApp(isFloating = true, viewModel = viewModel)
+                                        }
+                                    }
                                 }
-                                IconButton(onClick = { stopSelf() }) {
-                                    Icon(Icons.Default.Close, contentDescription = "Close", tint = Color.White)
-                                }
-                            }
-                            
-                            // The calculator UI
-                            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                                com.example.CalculatorApp(isFloating = true)
                             }
                         }
-                    }
-                }
-            }
         }
 
         layoutParams = WindowManager.LayoutParams(
