@@ -94,13 +94,13 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun CalculatorApp(
-    modifier: Modifier = Modifier, 
+    modifier: Modifier = Modifier,
     viewModel: CalculatorViewModel = viewModel(),
     isDark: Boolean = true,
     primaryColor: Color = Color(0xFF2196F3),
     themeMode: String = "auto",
-    onThemeToggle: () -> Unit = {},
-    isFloating: Boolean = false
+    onThemeToggle: () -> Unit = {}
+    
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
@@ -335,7 +335,7 @@ fun CalculatorApp(
                 }
                 if (!isLandscape && !isTabletPortrait) {
                     IconButton(onClick = { isScientific = !isScientific }) {
-                        Icon(imageVector = Icons.Default.Calculate, contentDescription = "Scientific", tint = if (isScientific) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)))
+                        Icon(imageVector = Icons.Default.Calculate, contentDescription = "Scientific Toggle", tint = if (isScientific) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)), modifier = Modifier.size(24.dp))
                     }
                 }
                 IconButton(onClick = onThemeToggle) {
@@ -346,28 +346,6 @@ fun CalculatorApp(
                             else -> Icons.Default.DarkMode
                         }
                         Icon(imageVector = icon, contentDescription = "Theme", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
-                    }
-                }
-                if (!isFloating) {
-                    val context = androidx.compose.ui.platform.LocalContext.current
-                    IconButton(onClick = {
-                        if (!android.provider.Settings.canDrawOverlays(context)) {
-                            val intent = android.content.Intent(
-                                android.provider.Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                                android.net.Uri.parse("package:${context.packageName}")
-                            )
-                            context.startActivity(intent)
-                        } else {
-                            val intent = android.content.Intent(context, com.example.FloatingCalculatorService::class.java)
-                            context.startService(intent)
-                            
-                            // Exit app when starting floating window
-                            if (context is android.app.Activity) {
-                                context.finish()
-                            }
-                        }
-                    }) {
-                        Icon(painter = androidx.compose.ui.res.painterResource(R.drawable.ic_float_window), contentDescription = "Floating Window", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
                     }
                 }
             }
@@ -661,18 +639,19 @@ fun CalculatorApp(
                 listOf("+/-", "0", ",", "=")
             )
             val portraitScientificKeys = listOf(
-                listOf("sin", "cos", "tan", "lg", "ln"),
-                listOf("x^y", "x²", "√x", "1/x", "|x|"),
-                listOf("C", "( )", "%", "÷", "x!"),
-                listOf("7", "8", "9", "×", "π"),
-                listOf("4", "5", "6", "-", "e"),
-                listOf("1", "2", "3", "+", "2nd"),
-                listOf("+/-", "0", ",", "=", "deg")
+                listOf("2nd", "deg", "sin", "cos", "tan"),
+                listOf("x^y", "lg", "ln", "x²", "|x|"),
+                listOf("√x", "C", "( )", "%", "÷"),
+                listOf("x!", "7", "8", "9", "×"),
+                listOf("1/x", "4", "5", "6", "-"),
+                listOf("π", "1", "2", "3", "+"),
+                listOf("+/-", "e", "0", ",", "=")
             )
-            Row(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
-                // Left side: History or Scientific or Digits
-                Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
-                    if (showHistory) {
+
+            if (showHistory) {
+                Row(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
+                    // Left side: History
+                    Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(bottom = 64.dp)
@@ -706,34 +685,39 @@ fun CalculatorApp(
                         ) {
                             Text("Clear history", color = if(isDark) Color.White else Color.Black, fontSize = 14.sp)
                         }
-                    } else if (isScientific) {
-                        val scientificLeftKeys = listOf(
-                            listOf("sin", "cos", "tan"),
-                            listOf("ln", "lg", "x^y"),
-                            listOf("√x", "x²", "|x|"),
-                            listOf("1/x", "π", "e"),
-                            listOf("2nd", "deg", "x!")
-                        )
-                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
-                            scientificLeftKeys.forEach { row ->
-                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                    }
+                    
+                    Spacer(modifier = Modifier.width(4.dp))
+                    
+                    // Right side: Operators
+                    Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+                        val operatorKeys = listOf("÷", "×", "-", "+", "=")
+                        operatorKeys.forEach { btn ->
+                            Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
+                            }
+                        }
+                    }
+                }
+            } else {
+                Box(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
+                    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
+                        if (isScientific) {
+                            portraitScientificKeys.forEach { row ->
+                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     row.forEach { btn ->
-                                        CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp), isPortraitScientific = true)
+                                        if (btn.isEmpty()) {
+                                            Box(modifier = Modifier.weight(1f).padding(horizontal = 2.dp))
+                                        } else {
+                                            val isNumOrOp = btn in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "+/-", "+", "-", "×", "÷", "=", "C", "%", "( )")
+                                            CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = !isNumOrOp, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 2.dp), isPortraitScientific = true)
+                                        }
                                     }
                                 }
                             }
-                        }
-                    } else {
-                        val standardLeftKeys = listOf(
-                            listOf("C", "( )", "%"),
-                            listOf("7", "8", "9"),
-                            listOf("4", "5", "6"),
-                            listOf("1", "2", "3"),
-                            listOf("+/-", "0", ",")
-                        )
-                        Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
-                            standardLeftKeys.forEach { row ->
-                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
+                        } else {
+                            portraitKeys.forEach { row ->
+                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     row.forEach { btn ->
                                         CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
                                     }
@@ -742,35 +726,21 @@ fun CalculatorApp(
                         }
                     }
                 }
-                
-                Spacer(modifier = Modifier.width(4.dp))
-                
-                // Right side: Operators
-                Column(modifier = Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
-                    val operatorKeys = listOf("÷", "×", "-", "+", "=")
-                    operatorKeys.forEach { btn ->
-                        Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceEvenly, verticalAlignment = Alignment.CenterVertically) {
-                            CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
-                        }
-                    }
-                }
             }
-                }
-            }
-        }
     }
-
+}
+}
+}
 @Composable
 fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = false, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3), modifier: Modifier = Modifier, isLandscape: Boolean = false, isTabletPortrait: Boolean = false, isPortraitScientific: Boolean = false) {
     val isRed = text == "C"
     val isOperator = text in listOf("÷", "×", "-", "+", "( )", "%")
     val isEqual = text == "="
-    
     val bgColor = if (isEqual) primaryColor
-        else if (isRed) (if (isDark) Color(0xFF3A2121) else Color(0xFFFFEAEA))
-        else if (isOperator) (if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
-        else if (isScientific) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFF0F0F0))
-        else (if (isDark) Color(0xFF222222) else Color(0xFFF5F5F5))
+        else if (isRed) (if (isDark) Color(0xFF3A2121) else Color(0xFFFFD0D0))
+        else if (isOperator) (if (isDark) Color(0xFF2B2B2B) else Color(0xFFC8C8C8))
+        else if (isScientific) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFD8D8D8))
+        else (if (isDark) Color(0xFF222222) else Color(0xFFE0E0E0))
         
     val textColor = if (isEqual) Color.White
         else if (isRed) Color(0xFFE57373)
@@ -778,7 +748,7 @@ fun CalculatorButton(text: String, onClick: () -> Unit, isScientific: Boolean = 
         else if (isDark) Color.White else Color.Black
 
     val buttonHeight = if (isTabletPortrait) 64.dp else if (isLandscape) 48.dp else if (isPortraitScientific) 52.dp else if (isScientific) 52.dp else 76.dp
-    val fontSize = if (isTabletPortrait) 24.sp else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
+    val fontSize = if (text == "+/-") 24.sp else if (isTabletPortrait) 24.sp else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
 
     Box(
         modifier = modifier,
