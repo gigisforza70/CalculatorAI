@@ -807,7 +807,7 @@ fun CalculatorButton(
                             .aspectRatio(1f)
                     } else if (isLandscape) {
                         Modifier
-                            .fillMaxHeight(0.85f)
+                            .fillMaxHeight(0.65f)
                             .aspectRatio(1f)
                     } else {
                         Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
