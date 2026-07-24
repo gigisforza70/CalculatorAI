@@ -69,6 +69,17 @@ class MainActivity : ComponentActivity() {
             }
             val primaryColor = Color(0xFF2196F3)
             val bgColor = if (isDark) Color(0xFF141414) else Color(0xFFFBFBFB)
+            
+            val view = androidx.compose.ui.platform.LocalView.current
+            if (!view.isInEditMode) {
+                SideEffect {
+                    val window = (view.context as android.app.Activity).window
+                    androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
+                        isAppearanceLightStatusBars = !isDark
+                        isAppearanceLightNavigationBars = !isDark
+                    }
+                }
+            }
 
             MyApplicationTheme(darkTheme = isDark) {
                 Scaffold(
@@ -779,13 +790,12 @@ fun CalculatorButton(
     val isEqual = text == "="
     
     val bgColor = if (isEqual) primaryColor
-        else if (isRed) (if (isDark) Color(0xFF3A2121) else Color(0xFFE8E8E8))
-        else if (isOperator) (if (isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+        else if (isRed || isOperator) (if (isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
         else if (isScientific) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFE8E8E8))
         else (if (isDark) Color(0xFF222222) else Color(0xFFE8E8E8))
         
     val textColor = if (isEqual) Color.White
-        else if (isRed) primaryColor
+        else if (isRed) (if (isDark) Color(0xFFEF5350) else Color(0xFFD32F2F))
         else if (isOperator) primaryColor
         else if (isScientific) (if (isDark) Color(0xFFB0B0B0) else Color(0xFF707070))
         else (if (isDark) Color.White else Color.Black)
