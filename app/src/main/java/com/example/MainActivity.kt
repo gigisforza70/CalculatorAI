@@ -242,9 +242,9 @@ fun CalculatorApp(
             // Display area
             Column(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(if (isLandscape && !isTablet) 0.6f else 1f)
                     .fillMaxWidth()
-                    .padding(top = 24.dp),
+                    .padding(top = if (isLandscape && !isTablet) 4.dp else 24.dp),
                 horizontalAlignment = Alignment.End
             ) {
                 val focusRequester = remember { FocusRequester() }
@@ -303,7 +303,7 @@ fun CalculatorApp(
 
                 Text(
                     text = resultPreview,
-                    fontSize = if (isLandscape) 24.sp else 32.sp,
+                    fontSize = if (isLandscape && !isTablet) 20.sp else if (isLandscape) 24.sp else 32.sp,
                     fontWeight = FontWeight.Medium,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
                     maxLines = 1,
@@ -807,8 +807,8 @@ fun CalculatorButton(
                             .aspectRatio(1f)
                     } else if (isLandscape) {
                         Modifier
-                            .fillMaxWidth(0.95f)
-                            .height(48.dp)
+                            .fillMaxHeight(0.85f)
+                            .aspectRatio(1f)
                     } else {
                         Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
                     }
