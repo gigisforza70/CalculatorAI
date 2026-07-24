@@ -87,39 +87,44 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
 
     val onAction = { action: String ->
         val currentField = if (focus1) value1 else value2
-        var text = currentField.text
+        var newField = currentField
+
         if (action == "C") {
-            text = "0"
+            newField = TextFieldValue("0", TextRange(1))
         } else if (action == "backspace") {
-            if (text.isNotEmpty()) {
-                text = text.dropLast(1)
-            }
-            if (text.isEmpty() || text == "-") {
-                text = "0"
+            if (currentField.text.isNotEmpty() && currentField.text != "0") {
+                newField = deleteConverterTextAtCursor(currentField)
+                if (newField.text.isEmpty() || newField.text == "-") {
+                    newField = TextFieldValue("0", TextRange(1))
+                }
             }
         } else if (action == "+/-") {
+            var text = currentField.text
             if (text != "0") {
                 if (text.startsWith("-")) {
                     text = text.substring(1)
+                    val newCursor = maxOf(0, currentField.selection.min - 1)
+                    newField = TextFieldValue(text, TextRange(newCursor))
                 } else {
                     text = "-" + text
+                    val newCursor = currentField.selection.min + 1
+                    newField = TextFieldValue(text, TextRange(newCursor))
                 }
             }
-                } else if (action == ",") {
-            if (!text.contains(",")) {
-                text += ","
+        } else if (action == ",") {
+            if (!currentField.text.contains(",")) {
+                newField = insertConverterTextAtCursor(currentField, ",")
             }
         } else {
-            val digitCount = text.count { it.isDigit() }
+            val digitCount = currentField.text.count { it.isDigit() }
             if (digitCount < 15) {
-                if (text == "0" && action != ",") {
-                    text = action
+                if (currentField.text == "0" && action != ",") {
+                    newField = TextFieldValue(action, TextRange(1))
                 } else {
-                    text += action
+                    newField = insertConverterTextAtCursor(currentField, action)
                 }
             }
         }
-        val newField = TextFieldValue(text, TextRange(text.length))
         updateValues(newField, focus1)
     }
 
@@ -569,3 +574,23 @@ fun formatDouble(d: Double): String {
     val df = java.text.DecimalFormat("#.########")
     return df.format(d)
 }
+
+private fun insertConverterTextAtCursor(tfv: TextFieldValue, textToInsert: String): TextFieldValue {
+    val selection = tfv.selection
+    val newText = tfv.text.substring(0, selection.min) + textToInsert + tfv.text.substring(selection.max)
+    val newCursorPos = selection.min + textToInsert.length
+    return TextFieldValue(text = newText, selection = TextRange(newCursorPos))
+}
+
+private fun deleteConverterTextAtCursor(tfv: TextFieldValue): TextFieldValue {
+    val selection = tfv.selection
+    if (selection.min != selection.max) {
+        val newText = tfv.text.substring(0, selection.min) + tfv.text.substring(selection.max)
+        return TextFieldValue(text = newText, selection = TextRange(selection.min))
+    } else if (selection.min > 0) {
+        val newText = tfv.text.substring(0, selection.min - 1) + tfv.text.substring(selection.min)
+        return TextFieldValue(text = newText, selection = TextRange(selection.min - 1))
+    }
+    return tfv
+}
+
