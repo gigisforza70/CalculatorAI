@@ -59,7 +59,7 @@ import androidx.compose.ui.text.font.FontFamily
 import com.example.R
 import java.text.DecimalFormat
 
-val dummyFontFamily = FontFamily(Font(R.font.roboto_mono))
+val dummyFontFamily = FontFamily(Font(R.font.dummy))
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
