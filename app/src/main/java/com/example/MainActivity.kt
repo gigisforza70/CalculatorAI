@@ -59,7 +59,7 @@ import androidx.compose.ui.text.font.FontFamily
 import com.example.R
 import java.text.DecimalFormat
 
-val dummyFontFamily = FontFamily(Font(R.font.dummy))
+val calculatorFontFamily = FontFamily(Font(R.font.google_sans))
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -304,7 +304,7 @@ fun CalculatorApp(
                                 }
                             },
                             fontWeight = FontWeight.Light,
-                            fontFamily = dummyFontFamily,
+                            fontFamily = calculatorFontFamily,
                             color = if (isDark) Color(0xFFFBFBFB) else Color(0xFF141414),
                             textAlign = TextAlign.End
                         ),
@@ -322,7 +322,7 @@ fun CalculatorApp(
                     text = resultPreview,
                     fontSize = if (isLandscape) 24.sp else 32.sp,
                     fontWeight = FontWeight.Medium,
-                    fontFamily = dummyFontFamily,
+                    fontFamily = calculatorFontFamily,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -839,7 +839,7 @@ fun CalculatorButton(
                 text = text,
                 fontSize = fontSize,
                 fontWeight = if (isOperator || isEqual) FontWeight.Medium else FontWeight.Normal,
-                fontFamily = if (text.matches(Regex("[0-9,]"))) dummyFontFamily else null,
+                fontFamily = if (text.matches(Regex("[0-9,]"))) calculatorFontFamily else null,
                 color = textColor
             )
         }
