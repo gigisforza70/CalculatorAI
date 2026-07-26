@@ -6,22 +6,22 @@
     android:viewportHeight="108">
 
     <!-- + -->
-    <group android:translateX="27" android:translateY="27">
+    <group android:translateX="32" android:translateY="32" android:pivotX="12" android:pivotY="12" android:scaleX="0.85" android:scaleY="0.85">
         <path android:fillColor="#FFFFFF" android:pathData="M10,2 h4 v8 h8 v4 h-8 v8 h-4 v-8 h-8 v-4 h8 Z"/>
     </group>
 
     <!-- - -->
-    <group android:translateX="57" android:translateY="27">
+    <group android:translateX="52" android:translateY="32" android:pivotX="12" android:pivotY="12" android:scaleX="0.85" android:scaleY="0.85">
         <path android:fillColor="#FFFFFF" android:pathData="M2,10 h20 v4 h-20 Z"/>
     </group>
 
     <!-- × -->
-    <group android:translateX="27" android:translateY="57" android:pivotX="12" android:pivotY="12" android:rotation="45">
+    <group android:translateX="32" android:translateY="52" android:pivotX="12" android:pivotY="12" android:rotation="45" android:scaleX="0.85" android:scaleY="0.85">
         <path android:fillColor="#FFFFFF" android:pathData="M10,2 h4 v8 h8 v4 h-8 v8 h-4 v-8 h-8 v-4 h8 Z"/>
     </group>
 
     <!-- ÷ -->
-    <group android:translateX="57" android:translateY="57">
+    <group android:translateX="52" android:translateY="52" android:pivotX="12" android:pivotY="12" android:scaleX="0.85" android:scaleY="0.85">
         <path android:fillColor="#FFFFFF" android:pathData="M2,10 h20 v4 h-20 Z"/>
         <path android:fillColor="#FFFFFF" android:pathData="M12,5 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0"/>
         <path android:fillColor="#FFFFFF" android:pathData="M12,19 m-2.5,0 a2.5,2.5 0 1,1 5,0 a2.5,2.5 0 1,1 -5,0"/>
