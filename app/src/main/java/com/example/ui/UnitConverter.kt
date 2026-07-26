@@ -2,8 +2,6 @@
 package com.example.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,6 +24,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import java.text.DecimalFormat
+import java.util.Locale
 
 enum class UnitCategory { Length, Area, Temperature, Volume, Mass, Data }
 
@@ -42,15 +45,18 @@ val dataUnits = listOf(UnitType("Bits", 0.125, "bit"), UnitType("Bytes", 1.0, "B
 fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDark: Boolean = true, primaryColor: Color = Color(0xFF2196F3)) {
     var selectedCategory by remember { mutableStateOf(UnitCategory.Length) }
     
-    var unit1 by remember { mutableStateOf(lengthUnits[5]) }
-    var unit2 by remember { mutableStateOf(lengthUnits[3]) }
+    var unit1 by remember { mutableStateOf(lengthUnits[0]) }
+    var unit2 by remember { mutableStateOf(lengthUnits[1]) }
+    var unit3 by remember { mutableStateOf(lengthUnits[2]) }
     
     var value1 by remember { mutableStateOf(TextFieldValue("0", TextRange(1))) }
     var value2 by remember { mutableStateOf(TextFieldValue("0", TextRange(1))) }
+    var value3 by remember { mutableStateOf(TextFieldValue("0", TextRange(1))) }
     
-    var focus1 by remember { mutableStateOf(true) }
+    var activeFieldIndex by remember { mutableStateOf(1) }
     var expanded1 by remember { mutableStateOf(false) }
     var expanded2 by remember { mutableStateOf(false) }
+    var expanded3 by remember { mutableStateOf(false) }
 
     BackHandler(onBack = onBack)
 
@@ -66,66 +72,71 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
     }
 
     LaunchedEffect(selectedCategory) {
-        unit1 = currentUnitsList[0]
-        if (currentUnitsList.size > 1) {
-            unit2 = currentUnitsList[1]
-        } else {
-            unit2 = currentUnitsList[0]
-        }
-        updateValuesInternal(value1, true, unit1, unit2, selectedCategory) { v1, v2 ->
-            value1 = v1
-            value2 = v2
+        unit1 = currentUnitsList.getOrNull(0) ?: lengthUnits[0]
+        unit2 = currentUnitsList.getOrNull(1) ?: unit1
+        unit3 = currentUnitsList.getOrNull(2) ?: unit2
+        updateAllValues(1, value1, unit1, unit2, unit3, selectedCategory) { v1, v2, v3 ->
+            value1 = v1; value2 = v2; value3 = v3
         }
     }
 
-    val updateValues = { inputField: TextFieldValue, isFirst: Boolean ->
-        updateValuesInternal(inputField, isFirst, unit1, unit2, selectedCategory) { v1, v2 ->
-            value1 = v1
-            value2 = v2
+    val triggerUpdate = { activeIdx: Int, fieldVal: TextFieldValue ->
+        updateAllValues(activeIdx, fieldVal, unit1, unit2, unit3, selectedCategory) { v1, v2, v3 ->
+            value1 = v1; value2 = v2; value3 = v3
         }
     }
 
     val onAction = { action: String ->
-        val currentField = if (focus1) value1 else value2
+        val currentField = when(activeFieldIndex) {
+            1 -> value1
+            2 -> value2
+            else -> value3
+        }
         var newField = currentField
 
-        if (action == "C") {
-            newField = TextFieldValue("0", TextRange(1))
-        } else if (action == "backspace") {
-            if (currentField.text.isNotEmpty() && currentField.text != "0") {
-                newField = deleteConverterTextAtCursor(currentField)
-                if (newField.text.isEmpty() || newField.text == "-") {
-                    newField = TextFieldValue("0", TextRange(1))
+        when (action) {
+            "C" -> {
+                newField = TextFieldValue("0", TextRange(1))
+            }
+            "backspace" -> {
+                if (currentField.text.isNotEmpty() && currentField.text != "0") {
+                    newField = deleteConverterTextAtCursor(currentField)
+                    if (newField.text.isEmpty() || newField.text == "-") {
+                        newField = TextFieldValue("0", TextRange(1))
+                    }
                 }
             }
-        } else if (action == "+/-") {
-            var text = currentField.text
-            if (text != "0") {
-                if (text.startsWith("-")) {
-                    text = text.substring(1)
-                    val newCursor = maxOf(0, currentField.selection.min - 1)
-                    newField = TextFieldValue(text, TextRange(newCursor))
-                } else {
-                    text = "-" + text
-                    val newCursor = currentField.selection.min + 1
-                    newField = TextFieldValue(text, TextRange(newCursor))
+            "+/-" -> {
+                var text = currentField.text
+                if (text != "0") {
+                    if (text.startsWith("-")) {
+                        text = text.substring(1)
+                        val newCursor = maxOf(0, currentField.selection.min - 1)
+                        newField = TextFieldValue(text, TextRange(newCursor))
+                    } else {
+                        text = "-$text"
+                        val newCursor = currentField.selection.min + 1
+                        newField = TextFieldValue(text, TextRange(newCursor))
+                    }
                 }
             }
-        } else if (action == ",") {
-            if (!currentField.text.contains(",")) {
-                newField = insertConverterTextAtCursor(currentField, ",")
+            "," -> {
+                if (!currentField.text.contains(",")) {
+                    newField = insertConverterTextAtCursor(currentField, ",")
+                }
             }
-        } else {
-            val digitCount = currentField.text.count { it.isDigit() }
-            if (digitCount < 15) {
-                if (currentField.text == "0" && action != ",") {
-                    newField = TextFieldValue(action, TextRange(1))
-                } else {
-                    newField = insertConverterTextAtCursor(currentField, action)
+            else -> {
+                val digitCount = currentField.text.count { it.isDigit() }
+                if (digitCount < 15) {
+                    if (currentField.text == "0" && action != ",") {
+                        newField = TextFieldValue(action, TextRange(1))
+                    } else {
+                        newField = insertConverterTextAtCursor(currentField, action)
+                    }
                 }
             }
         }
-        updateValues(newField, focus1)
+        triggerUpdate(activeFieldIndex, newField)
     }
 
     val bgColor = if(isDark) Color(0xFF141414) else Color(0xFFFBFBFB)
@@ -134,11 +145,10 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
     
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-    val isTablet = configuration.screenWidthDp >= 600
-    val useRowLayout = isLandscape || isTablet
     
-    val focusRequester1 = remember { androidx.compose.ui.focus.FocusRequester() }
-    val focusRequester2 = remember { androidx.compose.ui.focus.FocusRequester() }
+    val focusRequester1 = remember { FocusRequester() }
+    val focusRequester2 = remember { FocusRequester() }
+    val focusRequester3 = remember { FocusRequester() }
 
     Column(
         modifier = modifier
@@ -158,12 +168,13 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp)
+                .padding(horizontal = 16.dp, vertical = 4.dp)
         ) {
-            items(UnitCategory.values()) { category ->
+            items(UnitCategory.entries) { category ->
                 TextButton(onClick = { selectedCategory = category }) {
                     Text(
                         text = category.name,
+                        fontSize = 18.sp,
                         color = if (selectedCategory == category) primaryColor else secondaryTextColor,
                         fontWeight = if (selectedCategory == category) FontWeight.Bold else FontWeight.Normal
                     )
@@ -171,308 +182,241 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
             }
         }
         
-        if (useRowLayout) {
-            Row(modifier = Modifier.fillMaxSize()) {
-                Column(modifier = Modifier.weight(1f).fillMaxHeight()) {
-                    Input1(
-                        unit1 = unit1,
-                        focus1 = focus1,
-                        value1 = value1,
-                        expanded1 = expanded1,
-                        onExpanded1Change = { expanded1 = it },
-                        onUnit1Change = { unit1 = it; expanded1 = false; updateValues(value1, true) },
-                        onValue1Change = { updateValues(it, true) },
-                        onFocusChange = { focus1 = true },
-                        currentUnitsList = currentUnitsList,
-                        primaryColor = primaryColor,
-                        secondaryTextColor = secondaryTextColor,
-                        isDark = isDark,
-                        focusRequester = focusRequester1
+        if (isLandscape) {
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(
+                    modifier = Modifier
+                        .weight(1.1f)
+                        .fillMaxHeight(),
+                    verticalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    UnitInputRow(
+                        unit = unit1, active = activeFieldIndex == 1, value = value1, expanded = expanded1,
+                        onExpandedChange = { expanded1 = it }, onUnitChange = { unit1 = it; expanded1 = false; triggerUpdate(1, value1) },
+                        onValueChange = { triggerUpdate(1, it) }, onFocus = { activeFieldIndex = 1 },
+                        currentUnitsList = currentUnitsList, primaryColor = primaryColor, secondaryTextColor = secondaryTextColor,
+                        isDark = isDark, focusRequester = focusRequester1
                     )
-                    
-                    HorizontalDivider(modifier = Modifier.fillMaxWidth(), color = if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
-                    
-                    Input2(
-                        unit2 = unit2,
-                        focus1 = focus1,
-                        value2 = value2,
-                        expanded2 = expanded2,
-                        onExpanded2Change = { expanded2 = it },
-                        onUnit2Change = { unit2 = it; expanded2 = false; updateValues(value2, false) },
-                        onValue2Change = { updateValues(it, false) },
-                        onFocusChange = { focus1 = false },
-                        currentUnitsList = currentUnitsList,
-                        primaryColor = primaryColor,
-                        secondaryTextColor = secondaryTextColor,
-                        isDark = isDark,
-                        focusRequester = focusRequester2
+                    HorizontalDivider(color = if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
+                    UnitInputRow(
+                        unit = unit2, active = activeFieldIndex == 2, value = value2, expanded = expanded2,
+                        onExpandedChange = { expanded2 = it }, onUnitChange = { unit2 = it; expanded2 = false; triggerUpdate(2, value2) },
+                        onValueChange = { triggerUpdate(2, it) }, onFocus = { activeFieldIndex = 2 },
+                        currentUnitsList = currentUnitsList, primaryColor = primaryColor, secondaryTextColor = secondaryTextColor,
+                        isDark = isDark, focusRequester = focusRequester2
+                    )
+                    HorizontalDivider(color = if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
+                    UnitInputRow(
+                        unit = unit3, active = activeFieldIndex == 3, value = value3, expanded = expanded3,
+                        onExpandedChange = { expanded3 = it }, onUnitChange = { unit3 = it; expanded3 = false; triggerUpdate(3, value3) },
+                        onValueChange = { triggerUpdate(3, it) }, onFocus = { activeFieldIndex = 3 },
+                        currentUnitsList = currentUnitsList, primaryColor = primaryColor, secondaryTextColor = secondaryTextColor,
+                        isDark = isDark, focusRequester = focusRequester3
                     )
                 }
                 
-                Box(modifier = Modifier.weight(1f).fillMaxHeight().padding(bottom = 16.dp)) {
+                Box(
+                    modifier = Modifier
+                        .weight(0.9f)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center
+                ) {
                     Keypad(
                         onAction = onAction,
-                        focus1 = focus1,
-                        onFocusChange = { focus1 = it },
+                        activeFieldIndex = activeFieldIndex,
+                        onFieldChange = { activeFieldIndex = it },
                         isDark = isDark,
-                        primaryColor = primaryColor
+                        primaryColor = primaryColor,
+                        buttonSize = 84.dp // Aumentato a 84.dp in landscape tablet
                     )
                 }
             }
         } else {
-            Column(modifier = Modifier.weight(1f).padding(top = 16.dp), verticalArrangement = Arrangement.Top) {
-                Input1(
-                    unit1 = unit1,
-                    focus1 = focus1,
-                    value1 = value1,
-                    expanded1 = expanded1,
-                    onExpanded1Change = { expanded1 = it },
-                    onUnit1Change = { unit1 = it; expanded1 = false; updateValues(value1, true) },
-                    onValue1Change = { updateValues(it, true) },
-                    onFocusChange = { focus1 = true },
-                    currentUnitsList = currentUnitsList,
-                    primaryColor = primaryColor,
-                    secondaryTextColor = secondaryTextColor,
-                    isDark = isDark,
-                    focusRequester = focusRequester1
-                )
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 8.dp),
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    UnitInputRow(
+                        unit = unit1, active = activeFieldIndex == 1, value = value1, expanded = expanded1,
+                        onExpandedChange = { expanded1 = it }, onUnitChange = { unit1 = it; expanded1 = false; triggerUpdate(1, value1) },
+                        onValueChange = { triggerUpdate(1, it) }, onFocus = { activeFieldIndex = 1 },
+                        currentUnitsList = currentUnitsList, primaryColor = primaryColor, secondaryTextColor = secondaryTextColor,
+                        isDark = isDark, focusRequester = focusRequester1
+                    )
+                    HorizontalDivider(color = if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
+                    UnitInputRow(
+                        unit = unit2, active = activeFieldIndex == 2, value = value2, expanded = expanded2,
+                        onExpandedChange = { expanded2 = it }, onUnitChange = { unit2 = it; expanded2 = false; triggerUpdate(2, value2) },
+                        onValueChange = { triggerUpdate(2, it) }, onFocus = { activeFieldIndex = 2 },
+                        currentUnitsList = currentUnitsList, primaryColor = primaryColor, secondaryTextColor = secondaryTextColor,
+                        isDark = isDark, focusRequester = focusRequester2
+                    )
+                    HorizontalDivider(color = if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
+                    UnitInputRow(
+                        unit = unit3, active = activeFieldIndex == 3, value = value3, expanded = expanded3,
+                        onExpandedChange = { expanded3 = it }, onUnitChange = { unit3 = it; expanded3 = false; triggerUpdate(3, value3) },
+                        onValueChange = { triggerUpdate(3, it) }, onFocus = { activeFieldIndex = 3 },
+                        currentUnitsList = currentUnitsList, primaryColor = primaryColor, secondaryTextColor = secondaryTextColor,
+                        isDark = isDark, focusRequester = focusRequester3
+                    )
+                }
                 
-                HorizontalDivider(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp), color = if (isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0))
-                
-                Input2(
-                    unit2 = unit2,
-                    focus1 = focus1,
-                    value2 = value2,
-                    expanded2 = expanded2,
-                    onExpanded2Change = { expanded2 = it },
-                    onUnit2Change = { unit2 = it; expanded2 = false; updateValues(value2, false) },
-                    onValue2Change = { updateValues(it, false) },
-                    onFocusChange = { focus1 = false },
-                    currentUnitsList = currentUnitsList,
-                    primaryColor = primaryColor,
-                    secondaryTextColor = secondaryTextColor,
-                    isDark = isDark,
-                    focusRequester = focusRequester2
-                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Keypad(
+                        onAction = onAction,
+                        activeFieldIndex = activeFieldIndex,
+                        onFieldChange = { activeFieldIndex = it },
+                        isDark = isDark,
+                        primaryColor = primaryColor,
+                        buttonSize = 96.dp // Aumentato a 96.dp per renderlo grande e comodo su tablet in portrait
+                    )
+                }
             }
-            
-            Keypad(
-                onAction = onAction,
-                focus1 = focus1,
-                onFocusChange = { focus1 = it },
-                isDark = isDark,
-                primaryColor = primaryColor
-            )
-            // Added 32.dp padding here so it aligns above the navigation bar
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
-fun updateValuesInternal(
-    inputField: TextFieldValue,
-    isFirst: Boolean,
-    unit1: UnitType,
-    unit2: UnitType,
-    selectedCategory: UnitCategory,
-    onResult: (TextFieldValue, TextFieldValue) -> Unit
+fun updateAllValues(
+    changedIndex: Int,
+    fieldVal: TextFieldValue,
+    u1: UnitType,
+    u2: UnitType,
+    u3: UnitType,
+    category: UnitCategory,
+    onResult: (TextFieldValue, TextFieldValue, TextFieldValue) -> Unit
 ) {
     try {
-        val input = inputField.text
-        val v = input.replace(",", ".").toDoubleOrNull() ?: 0.0
-        if (isFirst) {
-            val out2 = if (selectedCategory == UnitCategory.Temperature) {
-                convertTemp(v, unit1.name, unit2.name).toString().replace(".", ",")
-            } else {
-                formatDouble((v * unit1.value) / unit2.value).replace(".", ",")
-            }
-            onResult(inputField, TextFieldValue(out2, TextRange(out2.length)))
-        } else {
-            val out1 = if (selectedCategory == UnitCategory.Temperature) {
-                convertTemp(v, unit2.name, unit1.name).toString().replace(".", ",")
-            } else {
-                formatDouble((v * unit2.value) / unit1.value).replace(".", ",")
-            }
-            onResult(TextFieldValue(out1, TextRange(out1.length)), inputField)
+        val textVal = fieldVal.text
+        val baseVal = textVal.replace(",", ".").toDoubleOrNull() ?: 0.0
+        
+        val standardVal = when (changedIndex) {
+            1 -> if (category == UnitCategory.Temperature) tempToBase(baseVal, u1.name) else baseVal * u1.value
+            2 -> if (category == UnitCategory.Temperature) tempToBase(baseVal, u2.name) else baseVal * u2.value
+            else -> if (category == UnitCategory.Temperature) tempToBase(baseVal, u3.name) else baseVal * u3.value
         }
-    } catch(e: Exception) {
-    }
+
+        val out1 = if (category == UnitCategory.Temperature) baseToTemp(standardVal, u1.name) else standardVal / u1.value
+        val out2 = if (category == UnitCategory.Temperature) baseToTemp(standardVal, u2.name) else standardVal / u2.value
+        val out3 = if (category == UnitCategory.Temperature) baseToTemp(standardVal, u3.name) else standardVal / u3.value
+
+        val f1 = if (changedIndex == 1) textVal else formatDouble(out1).replace(".", ",")
+        val f2 = if (changedIndex == 2) textVal else formatDouble(out2).replace(".", ",")
+        val f3 = if (changedIndex == 3) textVal else formatDouble(out3).replace(".", ",")
+
+        onResult(
+            if (changedIndex == 1) fieldVal else TextFieldValue(f1, TextRange(f1.length)),
+            if (changedIndex == 2) fieldVal else TextFieldValue(f2, TextRange(f2.length)),
+            if (changedIndex == 3) fieldVal else TextFieldValue(f3, TextRange(f3.length))
+        )
+    } catch (_: Exception) {}
 }
 
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun Input1(
-    unit1: UnitType,
-    focus1: Boolean,
-    value1: TextFieldValue,
-    expanded1: Boolean,
-    onExpanded1Change: (Boolean) -> Unit,
-    onUnit1Change: (UnitType) -> Unit,
-    onValue1Change: (TextFieldValue) -> Unit,
-    onFocusChange: () -> Unit,
+fun UnitInputRow(
+    unit: UnitType,
+    active: Boolean,
+    value: TextFieldValue,
+    expanded: Boolean,
+    onExpandedChange: (Boolean) -> Unit,
+    onUnitChange: (UnitType) -> Unit,
+    onValueChange: (TextFieldValue) -> Unit,
+    onFocus: () -> Unit,
     currentUnitsList: List<UnitType>,
     primaryColor: Color,
     secondaryTextColor: Color,
     isDark: Boolean,
-    focusRequester: androidx.compose.ui.focus.FocusRequester
+    focusRequester: FocusRequester
 ) {
     Column(modifier = Modifier
         .fillMaxWidth()
-        .padding(vertical = 12.dp, horizontal = 24.dp)) {
+        .padding(vertical = 4.dp)) {
         ExposedDropdownMenuBox(
-            expanded = expanded1,
-            onExpandedChange = { onExpanded1Change(!expanded1) }
+            expanded = expanded,
+            onExpandedChange = { onExpandedChange(!expanded) }
         ) {
-            Row(modifier = Modifier.menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
+            Row(modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = unit1.name,
-                    color = if(focus1) primaryColor else secondaryTextColor,
-                    fontSize = 16.sp
+                    text = unit.name,
+                    color = if(active) primaryColor else secondaryTextColor,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.width(4.dp))
+                Spacer(modifier = Modifier.width(6.dp))
                 Icon(
                     imageVector = Icons.Default.ArrowDropDown,
                     contentDescription = "Dropdown",
-                    tint = if(focus1) primaryColor else secondaryTextColor
+                    tint = if(active) primaryColor else secondaryTextColor,
+                    modifier = Modifier.size(24.dp)
                 )
             }
             ExposedDropdownMenu(
-                expanded = expanded1,
-                onDismissRequest = { onExpanded1Change(false) },
+                expanded = expanded,
+                onDismissRequest = { onExpandedChange(false) },
                 modifier = Modifier.background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFF0F0F0))
             ) {
-                currentUnitsList.forEach { unit ->
+                currentUnitsList.forEach { u ->
                     DropdownMenuItem(
-                        text = { Text(unit.name, color = if(isDark) Color.White else Color.Black) },
-                        onClick = { onUnit1Change(unit) }
+                        text = { Text(u.name, fontSize = 18.sp, color = if(isDark) Color.White else Color.Black) },
+                        onClick = { onUnitChange(u) }
                     )
                 }
             }
         }
         
         androidx.compose.ui.platform.InterceptPlatformTextInput(
-                    interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
-                ) {
-        androidx.compose.foundation.text.BasicTextField(
-            value = value1,
-            onValueChange = { newValue ->
-                if (newValue.text.matches(Regex("[0-9.,-]*")) && newValue.text.count { it.isDigit() } <= 15) {
-                    onValue1Change(newValue)
-                }
-            },
-            textStyle = androidx.compose.ui.text.TextStyle(
-                fontSize = 48.sp,
-                color = if(focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
-            ),
-            singleLine = true,
-            readOnly = false,
-            visualTransformation = ExpressionVisualTransformation(),
-            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
-            decorationBox = { innerTextField ->
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        innerTextField()
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = unit1.symbol,
-                        fontSize = 24.sp,
-                        color = if(focus1) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-            }
-        )
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
-@Composable
-fun Input2(
-    unit2: UnitType,
-    focus1: Boolean,
-    value2: TextFieldValue,
-    expanded2: Boolean,
-    onExpanded2Change: (Boolean) -> Unit,
-    onUnit2Change: (UnitType) -> Unit,
-    onValue2Change: (TextFieldValue) -> Unit,
-    onFocusChange: () -> Unit,
-    currentUnitsList: List<UnitType>,
-    primaryColor: Color,
-    secondaryTextColor: Color,
-    isDark: Boolean,
-    focusRequester: androidx.compose.ui.focus.FocusRequester
-) {
-    Column(modifier = Modifier
-        .fillMaxWidth()
-        .padding(vertical = 12.dp, horizontal = 24.dp)) {
-        ExposedDropdownMenuBox(
-            expanded = expanded2,
-            onExpandedChange = { onExpanded2Change(!expanded2) }
+            interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
         ) {
-            Row(modifier = Modifier.menuAnchor(androidx.compose.material3.MenuAnchorType.PrimaryEditable, true), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = unit2.name,
-                    color = if(!focus1) primaryColor else secondaryTextColor,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown",
-                    tint = if(!focus1) primaryColor else secondaryTextColor
-                )
-            }
-            ExposedDropdownMenu(
-                expanded = expanded2,
-                onDismissRequest = { onExpanded2Change(false) },
-                modifier = Modifier.background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFF0F0F0))
-            ) {
-                currentUnitsList.forEach { unit ->
-                    DropdownMenuItem(
-                        text = { Text(unit.name, color = if(isDark) Color.White else Color.Black) },
-                        onClick = { onUnit2Change(unit) }
-                    )
-                }
-            }
-        }
-        
-        androidx.compose.ui.platform.InterceptPlatformTextInput(
-                    interceptor = { _, _ -> kotlinx.coroutines.awaitCancellation() }
-                ) {
-        androidx.compose.foundation.text.BasicTextField(
-            value = value2,
-            onValueChange = { newValue ->
-                if (newValue.text.matches(Regex("[0-9.,-]*")) && newValue.text.count { it.isDigit() } <= 15) {
-                    onValue2Change(newValue)
-                }
-            },
-            textStyle = androidx.compose.ui.text.TextStyle(
-                fontSize = 48.sp,
-                color = if(!focus1) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
-            ),
-            singleLine = true,
-            readOnly = false,
-            visualTransformation = ExpressionVisualTransformation(),
-            modifier = Modifier.fillMaxWidth().focusRequester(focusRequester).onFocusChanged { if (it.isFocused) onFocusChange() },
-            cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
-            decorationBox = { innerTextField ->
-                Row(verticalAlignment = Alignment.Bottom) {
-                    Box(modifier = Modifier.weight(1f, fill = false)) {
-                        innerTextField()
+            androidx.compose.foundation.text.BasicTextField(
+                value = value,
+                onValueChange = { newValue ->
+                    if (newValue.text.matches(Regex("[0-9.,-]*")) && newValue.text.count { it.isDigit() } <= 15) {
+                        onValueChange(newValue)
                     }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = unit2.symbol,
-                        fontSize = 24.sp,
-                        color = if(!focus1) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)),
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                },
+                textStyle = androidx.compose.ui.text.TextStyle(
+                    fontSize = 38.sp,
+                    fontWeight = FontWeight.Light,
+                    color = if(active) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
+                ),
+                singleLine = true,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { if (it.isFocused) onFocus() },
+                cursorBrush = androidx.compose.ui.graphics.SolidColor(primaryColor),
+                decorationBox = { innerTextField ->
+                    Row(verticalAlignment = Alignment.Bottom) {
+                        Box(modifier = Modifier.weight(1f, fill = false)) {
+                            innerTextField()
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Text(
+                            text = unit.symbol,
+                            fontSize = 22.sp,
+                            color = if(active) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)),
+                            modifier = Modifier.padding(bottom = 4.dp)
+                        )
+                    }
                 }
-            }
-        )
+            )
         }
     }
 }
@@ -480,75 +424,93 @@ fun Input2(
 @Composable
 fun Keypad(
     onAction: (String) -> Unit,
-    focus1: Boolean,
-    onFocusChange: (Boolean) -> Unit,
+    activeFieldIndex: Int,
+    onFieldChange: (Int) -> Unit,
     isDark: Boolean,
-    primaryColor: Color
+    primaryColor: Color,
+    buttonSize: androidx.compose.ui.unit.Dp
 ) {
-    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
-    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-    val isTablet = configuration.screenWidthDp >= 600
-    val isTabletPortrait = isTablet && !isLandscape
-    val buttonHeight = if (isTabletPortrait) 64.dp else if (isLandscape) 48.dp else 76.dp
-
     val pad = listOf(
         listOf("7", "8", "9", "backspace"),
         listOf("4", "5", "6", "C"),
         listOf("1", "2", "3", "up"),
         listOf("+/-", "0", ",", "down")
     )
-    Column(verticalArrangement = Arrangement.Bottom, modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp)) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier.width(buttonSize * 4 + 30.dp)
+    ) {
         pad.forEach { row ->
             Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
             ) {
                 row.forEach { btn ->
-                    Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (btn == "backspace") {
-                            Box(
-                                modifier = Modifier
-                                    .size(buttonHeight)
-                                    .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
-                                    .clickable { onAction("backspace") },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.AutoMirrored.Filled.Backspace, "Backspace", tint = primaryColor)
+                    Box(
+                        modifier = Modifier
+                            .size(buttonSize),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        when (btn) {
+                            "backspace" -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                        .clickable { onAction("backspace") },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.AutoMirrored.Filled.Backspace, "Backspace", tint = primaryColor, modifier = Modifier.size(buttonSize * 0.42f))
+                                }
                             }
-                        } else if (btn == "up") {
-                            Box(
-                                modifier = Modifier
-                                    .size(buttonHeight)
-                                    .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
-                                    .clickable { onFocusChange(true) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.ArrowUpward, "Up", tint = primaryColor)
+                            "up" -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                        .clickable { 
+                                            val next = if (activeFieldIndex > 1) activeFieldIndex - 1 else 3
+                                            onFieldChange(next)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.ArrowUpward, "Up", tint = primaryColor, modifier = Modifier.size(buttonSize * 0.42f))
+                                }
                             }
-                        } else if (btn == "down") {
-                            Box(
-                                modifier = Modifier
-                                    .size(buttonHeight)
-                                    .clip(androidx.compose.foundation.shape.CircleShape)
-                                    .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
-                                    .clickable { onFocusChange(false) },
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.ArrowDownward, "Down", tint = primaryColor)
+                            "down" -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                        .clickable { 
+                                            val next = if (activeFieldIndex < 3) activeFieldIndex + 1 else 1
+                                            onFieldChange(next)
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(Icons.Default.ArrowDownward, "Down", tint = primaryColor, modifier = Modifier.size(buttonSize * 0.42f))
+                                }
                             }
-                        } else {
-                            com.example.CalculatorButton(
-                                text = btn,
-                                onClick = { onAction(btn) },
-                                isDark = isDark,
-                                primaryColor = primaryColor,
-                                isLandscape = isLandscape,
-                                isTabletPortrait = isTabletPortrait
-                            )
+                            else -> {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(androidx.compose.foundation.shape.CircleShape)
+                                        .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                        .clickable { onAction(btn) },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = btn,
+                                        fontSize = 36.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (btn == "C") Color(0xFFE57373) else (if(isDark) Color.White else Color.Black)
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -556,14 +518,17 @@ fun Keypad(
         }
     }
 }
-fun convertTemp(value: Double, from: String, to: String): Double {
-    if (from == to) return value
-    val c = when(from) {
-        "Fahrenheit" -> (value - 32) * 5/9
-        "Kelvin" -> value - 273.15
-        else -> value // Celsius
+
+fun tempToBase(v: Double, unit: String): Double {
+    return when(unit) {
+        "Fahrenheit" -> (v - 32) * 5/9
+        "Kelvin" -> v - 273.15
+        else -> v
     }
-    return when(to) {
+}
+
+fun baseToTemp(c: Double, unit: String): Double {
+    return when(unit) {
         "Fahrenheit" -> c * 9/5 + 32
         "Kelvin" -> c + 273.15
         else -> c
@@ -571,7 +536,7 @@ fun convertTemp(value: Double, from: String, to: String): Double {
 }
 
 fun formatDouble(d: Double): String {
-    val df = java.text.DecimalFormat("#.########")
+    val df = DecimalFormat("#.########", java.text.DecimalFormatSymbols(Locale.US))
     return df.format(d)
 }
 
@@ -593,4 +558,3 @@ private fun deleteConverterTextAtCursor(tfv: TextFieldValue): TextFieldValue {
     }
     return tfv
 }
-
