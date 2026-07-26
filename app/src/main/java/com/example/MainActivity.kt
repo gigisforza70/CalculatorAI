@@ -54,7 +54,12 @@ import com.example.ui.ExpressionVisualTransformation
 import com.example.ui.UnitConverterScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.CalculatorViewModel
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import com.example.R
 import java.text.DecimalFormat
+
+val dummyFontFamily = FontFamily(Font(R.font.roboto_mono))
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -299,6 +304,7 @@ fun CalculatorApp(
                                 }
                             },
                             fontWeight = FontWeight.Light,
+                            fontFamily = dummyFontFamily,
                             color = if (isDark) Color(0xFFFBFBFB) else Color(0xFF141414),
                             textAlign = TextAlign.End
                         ),
@@ -316,6 +322,7 @@ fun CalculatorApp(
                     text = resultPreview,
                     fontSize = if (isLandscape) 24.sp else 32.sp,
                     fontWeight = FontWeight.Medium,
+                    fontFamily = dummyFontFamily,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -832,6 +839,7 @@ fun CalculatorButton(
                 text = text,
                 fontSize = fontSize,
                 fontWeight = if (isOperator || isEqual) FontWeight.Medium else FontWeight.Normal,
+                fontFamily = if (text.matches(Regex("[0-9,]"))) dummyFontFamily else null,
                 color = textColor
             )
         }
