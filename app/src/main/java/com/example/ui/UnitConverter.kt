@@ -145,6 +145,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
     
     val configuration = androidx.compose.ui.platform.LocalConfiguration.current
     val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isTablet = configuration.screenWidthDp >= 600
     
     val focusRequester1 = remember { FocusRequester() }
     val focusRequester2 = remember { FocusRequester() }
@@ -233,7 +234,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
                         onFieldChange = { activeFieldIndex = it },
                         isDark = isDark,
                         primaryColor = primaryColor,
-                        buttonSize = 84.dp // Aumentato a 84.dp in landscape tablet
+                        buttonSize = if (isTablet) 84.dp else 56.dp
                     )
                 }
             }
@@ -285,7 +286,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
                         onFieldChange = { activeFieldIndex = it },
                         isDark = isDark,
                         primaryColor = primaryColor,
-                        buttonSize = 96.dp // Aumentato a 96.dp per renderlo grande e comodo su tablet in portrait
+                        buttonSize = if (isTablet) 96.dp else 72.dp
                     )
                 }
             }
