@@ -625,7 +625,7 @@ fun CalculatorApp(
                     listOf("1", "2", "3", "+"),
                     listOf("+/-", "0", ",", "=")
                 )
-                Row(modifier = Modifier.fillMaxWidth().weight(1.5f), horizontalArrangement = Arrangement.SpaceBetween) {
+                Row(modifier = Modifier.fillMaxWidth(0.85f).align(Alignment.CenterHorizontally).weight(1.5f), horizontalArrangement = Arrangement.Center) {
                     if (showHistory) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
@@ -674,9 +674,9 @@ fun CalculatorApp(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
                     Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark && !showHistory) Color(0xFF2B2B2B) else if (!isDark && !showHistory) Color(0xFFE0E0E0) else Color.Transparent))
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
                         landscapeStandard.forEach { row ->
@@ -687,8 +687,6 @@ fun CalculatorApp(
                             }
                         }
                     }
-
-                    Box(modifier = Modifier.weight(3f).fillMaxHeight())
                 }
             } else {
                 val portraitKeys = listOf(
