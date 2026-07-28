@@ -83,6 +83,12 @@ class MainActivity : ComponentActivity() {
             if (!view.isInEditMode) {
                 SideEffect {
                     val window = (view.context as android.app.Activity).window
+                    window.statusBarColor = if (isDark) android.graphics.Color.parseColor("#141414") else android.graphics.Color.parseColor("#FBFBFB")
+                    window.navigationBarColor = if (isDark) android.graphics.Color.parseColor("#141414") else android.graphics.Color.parseColor("#FBFBFB")
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                        window.isNavigationBarContrastEnforced = false
+                        window.isStatusBarContrastEnforced = false
+                    }
                     androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
                         isAppearanceLightStatusBars = !isDark
                         isAppearanceLightNavigationBars = !isDark
