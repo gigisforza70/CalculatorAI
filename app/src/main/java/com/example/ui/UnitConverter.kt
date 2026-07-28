@@ -397,6 +397,7 @@ fun UnitInputRow(
                     color = if(active) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
                 ),
                 singleLine = true,
+                visualTransformation = ExpressionVisualTransformation(),
                 modifier = Modifier
                     .fillMaxWidth()
                     .focusRequester(focusRequester)
@@ -495,17 +496,20 @@ fun Keypad(
                                 }
                             }
                             else -> {
+                                val isNumberOrDot = btn.matches(Regex("[0-9,]+")) || btn == "+/-"
+                                val btnBg = if (!isNumberOrDot) (if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8)) else (if(isDark) Color(0xFF222222) else Color(0xFFE8E8E8))
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .clip(androidx.compose.foundation.shape.CircleShape)
-                                        .background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
+                                        .background(btnBg)
                                         .clickable { onAction(btn) },
                                     contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         text = btn,
                                         fontSize = 36.sp,
+                                        fontFamily = if (isNumberOrDot && btn != "+/-") androidx.compose.ui.text.font.FontFamily.SansSerif else null,
                                         fontWeight = FontWeight.Medium,
                                         color = if (btn == "C") Color(0xFFE57373) else (if(isDark) Color.White else Color.Black)
                                     )
