@@ -55,12 +55,8 @@ import com.example.ui.ExpressionVisualTransformation
 import com.example.ui.UnitConverterScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.CalculatorViewModel
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import com.example.R
 import java.text.DecimalFormat
-
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -259,8 +255,8 @@ fun CalculatorApp(
             .padding(
                 start = if (isLandscape) 48.dp else 24.dp,
                 end = if (isLandscape) 48.dp else 24.dp,
-                top = if (isLandscape) 8.dp else 16.dp,
-                bottom = if (isLandscape) 8.dp else 16.dp
+                top = if (isLandscape) 4.dp else 16.dp,
+                bottom = if (isLandscape) 4.dp else 16.dp
             ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -270,7 +266,7 @@ fun CalculatorApp(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(top = 24.dp),
+                    .padding(top = if (isLandscape) 4.dp else 24.dp),
                 horizontalAlignment = Alignment.End
             ) {
                 val focusRequester = remember { FocusRequester() }
@@ -301,9 +297,9 @@ fun CalculatorApp(
                         textStyle = TextStyle(
                             fontSize = if (isLandscape) {
                                 when {
-                                    expression.text.length > 25 -> 16.sp
-                                    expression.text.length > 15 -> 20.sp
-                                    else -> 32.sp
+                                    expression.text.length > 25 -> 14.sp
+                                    expression.text.length > 15 -> 18.sp
+                                    else -> 26.sp
                                 }
                             } else {
                                 when {
@@ -330,7 +326,7 @@ fun CalculatorApp(
 
                 Text(
                     text = resultPreview,
-                    fontSize = if (isLandscape) 24.sp else 32.sp,
+                    fontSize = if (isLandscape) 20.sp else 32.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = FontFamily.SansSerif,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
@@ -339,7 +335,7 @@ fun CalculatorApp(
                 )
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else 16.dp))
 
             // Toolbar row
             Row(
@@ -379,9 +375,9 @@ fun CalculatorApp(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else 8.dp))
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 6.dp else 12.dp))
 
             // Keypad
             if (isTabletLandscape) {
@@ -625,7 +621,7 @@ fun CalculatorApp(
                     listOf("1", "2", "3", "+"),
                     listOf("+/-", "0", ",", "=")
                 )
-                Row(modifier = Modifier.fillMaxWidth(0.85f).align(Alignment.CenterHorizontally).weight(1.5f), horizontalArrangement = Arrangement.Center) {
+                Row(modifier = Modifier.fillMaxWidth(0.85f).align(Alignment.CenterHorizontally).weight(3f), horizontalArrangement = Arrangement.Center) {
                     if (showHistory) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
@@ -665,7 +661,7 @@ fun CalculatorApp(
                     } else {
                         Column(modifier = Modifier.weight(3f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
                             landscapeScientific.forEach { row ->
-                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     row.forEach { btn ->
                                         CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = true, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isLandscape = true)
                                     }
@@ -675,12 +671,12 @@ fun CalculatorApp(
                     }
                     
                     Spacer(modifier = Modifier.width(12.dp))
-                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 16.dp).background(if(isDark && !showHistory) Color(0xFF2B2B2B) else if (!isDark && !showHistory) Color(0xFFE0E0E0) else Color.Transparent))
+                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 8.dp).background(if(isDark && !showHistory) Color(0xFF2B2B2B) else if (!isDark && !showHistory) Color(0xFFE0E0E0) else Color.Transparent))
                     Spacer(modifier = Modifier.width(12.dp))
 
                     Column(modifier = Modifier.weight(4f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
                         landscapeStandard.forEach { row ->
-                            Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                            Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                 row.forEach { btn ->
                                     CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f), isLandscape = true)
                                 }
@@ -817,7 +813,7 @@ fun CalculatorButton(
 
     val fontSize = if (isTabletPortrait) {
         if (isScientific) 22.sp else 28.sp
-    } else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
+    } else if (isLandscape) 18.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
 
     Box(
         modifier = modifier,
@@ -833,7 +829,7 @@ fun CalculatorButton(
                     } else if (isLandscape) {
                         Modifier
                             .fillMaxWidth(0.95f)
-                            .height(48.dp)
+                            .height(44.dp)
                     } else {
                         Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
                     }
