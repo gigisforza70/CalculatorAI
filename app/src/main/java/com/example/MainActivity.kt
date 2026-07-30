@@ -127,7 +127,7 @@ fun CalculatorApp(
 ) {
     val configuration = LocalConfiguration.current
     val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val isTablet = configuration.screenWidthDp >= 600
+    val isTablet = configuration.smallestScreenWidthDp >= 600
     val isTabletPortrait = isTablet && !isLandscape
     val isTabletLandscape = isTablet && isLandscape
 
