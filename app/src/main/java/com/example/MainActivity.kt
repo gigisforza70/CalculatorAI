@@ -621,7 +621,7 @@ fun CalculatorApp(
                     listOf("1", "2", "3", "+"),
                     listOf("+/-", "0", ",", "=")
                 )
-                Row(modifier = Modifier.fillMaxWidth(0.85f).align(Alignment.CenterHorizontally).weight(3f), horizontalArrangement = Arrangement.Center) {
+                Row(modifier = Modifier.fillMaxWidth(0.7f).align(Alignment.CenterHorizontally).weight(3f), horizontalArrangement = Arrangement.Center) {
                     if (showHistory) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
@@ -827,7 +827,7 @@ fun CalculatorButton(
                             .fillMaxWidth()
                             .aspectRatio(1f)
                     } else if (isLandscape) {
-                        Modifier.size(32.dp)
+                        Modifier.size(38.dp)
                     } else {
                         Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
                     }
