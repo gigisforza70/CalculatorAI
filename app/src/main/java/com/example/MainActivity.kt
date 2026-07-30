@@ -813,7 +813,7 @@ fun CalculatorButton(
 
     val fontSize = if (isTabletPortrait) {
         if (isScientific) 22.sp else 28.sp
-    } else if (isLandscape) 18.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
+    } else if (isLandscape) 16.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
 
     Box(
         modifier = modifier,
@@ -827,9 +827,7 @@ fun CalculatorButton(
                             .fillMaxWidth()
                             .aspectRatio(1f)
                     } else if (isLandscape) {
-                        Modifier
-                            .fillMaxWidth(0.95f)
-                            .height(44.dp)
+                        Modifier.size(32.dp)
                     } else {
                         Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
                     }
