@@ -163,7 +163,8 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back", tint = textColor)
                 }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = bgColor)
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = bgColor),
+            windowInsets = if (isLandscape && !isTablet) WindowInsets(0.dp) else TopAppBarDefaults.windowInsets
         )
         
         LazyRow(
@@ -187,7 +188,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
             Row(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = if (!isTablet) 2.dp else 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
