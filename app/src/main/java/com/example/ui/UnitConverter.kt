@@ -170,7 +170,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
         LazyRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 4.dp)
+                .padding(horizontal = 16.dp, vertical = if (isLandscape && !isTablet) 0.dp else 4.dp)
         ) {
             items(UnitCategory.entries) { category ->
                 TextButton(onClick = { selectedCategory = category }) {
@@ -347,9 +347,13 @@ fun UnitInputRow(
     isDark: Boolean,
     focusRequester: FocusRequester
 ) {
+    val configuration = androidx.compose.ui.platform.LocalConfiguration.current
+    val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val isTablet = configuration.smallestScreenWidthDp >= 600
+
     Column(modifier = Modifier
         .fillMaxWidth()
-        .padding(vertical = 4.dp)) {
+        .padding(vertical = if (isLandscape && !isTablet) 0.dp else 4.dp)) {
         ExposedDropdownMenuBox(
             expanded = expanded,
             onExpandedChange = { onExpandedChange(!expanded) }
@@ -394,7 +398,7 @@ fun UnitInputRow(
                     }
                 },
                 textStyle = androidx.compose.ui.text.TextStyle(
-                    fontSize = 38.sp,
+                    fontSize = if (isLandscape && !isTablet) 28.sp else 38.sp,
                     fontWeight = FontWeight.Light,
                     color = if(active) primaryColor else (if(isDark) Color(0xFFFBFBFB) else Color(0xFF141414))
                 ),
