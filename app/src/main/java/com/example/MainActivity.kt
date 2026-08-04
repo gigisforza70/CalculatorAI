@@ -246,24 +246,18 @@ fun CalculatorApp(
         }
     }
 
-    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
-        val minHeight = if (isLandscape) 350.dp else 550.dp
-        val isSquashed = maxHeight < minHeight
-        val contentHeight = if (isSquashed) minHeight else maxHeight
-        
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .then(if (isSquashed) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                .padding(
-                    start = if (isLandscape) 48.dp else 24.dp,
-                    end = if (isLandscape) 48.dp else 24.dp,
-                    top = if (isLandscape) 4.dp else 16.dp,
-                    bottom = if (isLandscape) 4.dp else 16.dp
-                ),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Column(modifier = Modifier.widthIn(max = if (isLandscape) 800.dp else Dp.Unspecified).height(contentHeight)) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(
+                start = if (isLandscape) 48.dp else 24.dp,
+                end = if (isLandscape) 48.dp else 24.dp,
+                top = if (isLandscape) 4.dp else 16.dp,
+                bottom = if (isLandscape) 4.dp else 16.dp
+            ),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Column(modifier = Modifier.widthIn(max = if (isLandscape) 800.dp else Dp.Unspecified).fillMaxHeight()) {
             // Display area
             Column(
                 modifier = Modifier
@@ -797,7 +791,6 @@ fun CalculatorApp(
             }
         }
     }
-    }
 }
 
 @Composable
@@ -838,15 +831,7 @@ fun CalculatorButton(
     ) {
         Box(
             modifier = Modifier
-                .then(
-                    if (isTabletPortrait) {
-                        Modifier.fillMaxWidth()
-                    } else if (isLandscape) {
-                        Modifier.size(42.dp)
-                    } else {
-                        Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
-                    }
-                )
+                .fillMaxSize(if (isLandscape) 0.8f else 0.95f)
                 .aspectRatio(1f)
                 .clip(CircleShape)
                 .background(bgColor)
