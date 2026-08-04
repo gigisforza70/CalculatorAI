@@ -15,6 +15,9 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
@@ -243,18 +246,24 @@ fun CalculatorApp(
         }
     }
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(
-                start = if (isLandscape) 48.dp else 24.dp,
-                end = if (isLandscape) 48.dp else 24.dp,
-                top = if (isLandscape) 4.dp else 16.dp,
-                bottom = if (isLandscape) 4.dp else 16.dp
-            ),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Column(modifier = Modifier.widthIn(max = if (isLandscape) 800.dp else Dp.Unspecified).fillMaxHeight()) {
+    BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val minHeight = if (isLandscape) 350.dp else 550.dp
+        val isSquashed = maxHeight < minHeight
+        val contentHeight = if (isSquashed) minHeight else maxHeight
+        
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .then(if (isSquashed) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                .padding(
+                    start = if (isLandscape) 48.dp else 24.dp,
+                    end = if (isLandscape) 48.dp else 24.dp,
+                    top = if (isLandscape) 4.dp else 16.dp,
+                    bottom = if (isLandscape) 4.dp else 16.dp
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Column(modifier = Modifier.widthIn(max = if (isLandscape) 800.dp else Dp.Unspecified).height(contentHeight)) {
             // Display area
             Column(
                 modifier = Modifier
@@ -788,6 +797,7 @@ fun CalculatorApp(
                 }
             }
         }
+    }
     }
 }
 
