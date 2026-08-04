@@ -660,7 +660,13 @@ fun CalculatorApp(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.width(12.dp))
+                    if (showHistory) {
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 8.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
+                        Spacer(modifier = Modifier.width(12.dp))
+                    } else {
+                        Spacer(modifier = Modifier.width(25.dp))
+                    }
                     
                     Column(modifier = Modifier.weight(1.2f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
                         landscapeScientific.forEach { row ->
@@ -672,9 +678,7 @@ fun CalculatorApp(
                         }
                     }
                     
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Box(modifier = Modifier.width(1.dp).fillMaxHeight().padding(vertical = 8.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                     
                     Column(modifier = Modifier.weight(1.2f).fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
                         landscapeStandard.forEach { row ->
