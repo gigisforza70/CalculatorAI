@@ -259,14 +259,19 @@ fun CalculatorApp(
     ) {
         Column(modifier = Modifier.widthIn(max = if (isLandscape) 800.dp else Dp.Unspecified).fillMaxHeight()) {
             // Display area
-            Column(
+            BoxWithConstraints(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .padding(top = if (isLandscape) 4.dp else 24.dp),
-                horizontalAlignment = Alignment.End
+                    .padding(top = if (isLandscape) 4.dp else 24.dp)
             ) {
-                val focusRequester = remember { FocusRequester() }
+                val displayScale = (maxHeight.value / 120f).coerceIn(0.4f, 1f)
+                
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.End
+                ) {
+                    val focusRequester = remember { FocusRequester() }
                 LaunchedEffect(Unit) {
                     try { focusRequester.requestFocus() } catch (e: Exception) {}
                 }
@@ -292,27 +297,27 @@ fun CalculatorApp(
                             expression = newValue
                         },
                         textStyle = TextStyle(
-                            fontSize = if (isTabletLandscape) {
+                            fontSize = (if (isTabletLandscape) {
                                 when {
-                                    expression.text.length > 25 -> 32.sp
-                                    expression.text.length > 15 -> 44.sp
-                                    expression.text.length > 10 -> 56.sp
-                                    else -> 68.sp
+                                    expression.text.length > 25 -> 32f
+                                    expression.text.length > 15 -> 44f
+                                    expression.text.length > 10 -> 56f
+                                    else -> 68f
                                 }
                             } else if (isLandscape) {
                                 when {
-                                    expression.text.length > 25 -> 14.sp
-                                    expression.text.length > 15 -> 18.sp
-                                    else -> 26.sp
+                                    expression.text.length > 25 -> 14f
+                                    expression.text.length > 15 -> 18f
+                                    else -> 26f
                                 }
                             } else {
                                 when {
-                                    expression.text.length > 25 -> 20.sp
-                                    expression.text.length > 15 -> 28.sp
-                                    expression.text.length > 10 -> 36.sp
-                                    else -> 48.sp
+                                    expression.text.length > 25 -> 20f
+                                    expression.text.length > 15 -> 28f
+                                    expression.text.length > 10 -> 36f
+                                    else -> 48f
                                 }
-                            },
+                            } * displayScale).sp,
                             fontWeight = FontWeight.Light,
                             fontFamily = FontFamily.SansSerif,
                             color = if (isDark) Color(0xFFFBFBFB) else Color(0xFF141414),
@@ -330,13 +335,14 @@ fun CalculatorApp(
 
                 Text(
                     text = resultPreview,
-                    fontSize = if (isTabletLandscape) 48.sp else if (isLandscape) 20.sp else 32.sp,
+                    fontSize = ((if (isTabletLandscape) 48f else if (isLandscape) 20f else 32f) * displayScale).sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = FontFamily.SansSerif,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
             }
 
             Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else 16.dp))
@@ -821,18 +827,23 @@ fun CalculatorButton(
         else if (isScientific && !isNumeric) (if (isDark) Color(0xFFD0D0D0) else Color(0xFF333333))
         else (if (isDark) Color.White else Color.Black)
 
-    val fontSize = if (isTabletPortrait) {
-        if (isScientific && !isNumeric) 22.sp else 28.sp
-    } else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific && !isNumeric) 24.sp else 36.sp
-
-    Box(
+    BoxWithConstraints(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
+        val size = androidx.compose.ui.unit.min(maxWidth, maxHeight) * (if (isLandscape) 0.8f else 0.95f)
+        val baseFontSize = if (isTabletPortrait) {
+            if (isScientific && !isNumeric) 22f else 28f
+        } else if (isLandscape) 20f else if (isPortraitScientific) 22f else if (isScientific && !isNumeric) 24f else 36f
+        
+        // Calculate scaling factor based on constrained size vs expected normal size (e.g., 76.dp)
+        val expectedSize = if (isLandscape) 42f else if (isPortraitScientific || isScientific) 52f else 76f
+        val scaleFactor = (size.value / expectedSize).coerceIn(0.3f, 1.2f)
+        val fontSize = (baseFontSize * scaleFactor).sp
+
         Box(
             modifier = Modifier
-                .fillMaxSize(if (isLandscape) 0.8f else 0.95f)
-                .aspectRatio(1f)
+                .size(size)
                 .clip(CircleShape)
                 .background(bgColor)
                 .clickable(onClick = onClick),
