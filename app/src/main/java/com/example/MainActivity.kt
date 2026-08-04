@@ -300,10 +300,10 @@ fun CalculatorApp(
                         textStyle = TextStyle(
                             fontSize = if (isTabletLandscape) {
                                 when {
-                                    expression.text.length > 25 -> 24.sp
-                                    expression.text.length > 15 -> 32.sp
-                                    expression.text.length > 10 -> 44.sp
-                                    else -> 56.sp
+                                    expression.text.length > 25 -> 32.sp
+                                    expression.text.length > 15 -> 44.sp
+                                    expression.text.length > 10 -> 56.sp
+                                    else -> 68.sp
                                 }
                             } else if (isLandscape) {
                                 when {
@@ -336,7 +336,7 @@ fun CalculatorApp(
 
                 Text(
                     text = resultPreview,
-                    fontSize = if (isTabletLandscape) 36.sp else if (isLandscape) 20.sp else 32.sp,
+                    fontSize = if (isTabletLandscape) 48.sp else if (isLandscape) 20.sp else 32.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = FontFamily.SansSerif,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
@@ -467,8 +467,7 @@ fun CalculatorApp(
                                         isDark = isDark,
                                         primaryColor = primaryColor,
                                         modifier = Modifier.weight(1f).padding(horizontal = 4.dp),
-                                        isLandscape = false,
-                                        isTabletPortrait = true
+                                        isLandscape = false
                                     )
                                 }
                             }
@@ -826,12 +825,12 @@ fun CalculatorButton(
     val textColor = if (isEqual) Color.White
         else if (isRed) (if (isDark) Color(0xFFEF5350) else Color(0xFFD32F2F))
         else if (isOperator) primaryColor
-        else if (isScientific && !isNumeric) (if (isDark) Color(0xFFB0B0B0) else Color(0xFF707070))
+        else if (isScientific && !isNumeric) (if (isDark) Color(0xFFD0D0D0) else Color(0xFF333333))
         else (if (isDark) Color.White else Color.Black)
 
     val fontSize = if (isTabletPortrait) {
-        if (isScientific) 22.sp else 28.sp
-    } else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific) 24.sp else 36.sp
+        if (isScientific && !isNumeric) 22.sp else 28.sp
+    } else if (isLandscape) 20.sp else if (isPortraitScientific) 22.sp else if (isScientific && !isNumeric) 24.sp else 36.sp
 
     Box(
         modifier = modifier,
@@ -841,15 +840,14 @@ fun CalculatorButton(
             modifier = Modifier
                 .then(
                     if (isTabletPortrait) {
-                        Modifier
-                            .fillMaxWidth()
-                            .aspectRatio(1f)
+                        Modifier.fillMaxWidth()
                     } else if (isLandscape) {
                         Modifier.size(42.dp)
                     } else {
                         Modifier.size(if (isPortraitScientific || isScientific) 52.dp else 76.dp)
                     }
                 )
+                .aspectRatio(1f)
                 .clip(CircleShape)
                 .background(bgColor)
                 .clickable(onClick = onClick),
