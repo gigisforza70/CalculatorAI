@@ -1,0 +1,26 @@
+--- app/src/main/java/com/example/MainActivity.kt
++++ app/src/main/java/com/example/MainActivity.kt
+@@ -75,20 +75,13 @@
+             val bgColor = if (isDark) Color(0xFF141414) else Color(0xFFFBFBFB)
+             
+             val view = androidx.compose.ui.platform.LocalView.current
++            val context = androidx.compose.ui.platform.LocalContext.current
+             if (!view.isInEditMode) {
+                 SideEffect {
+-                    val window = (view.context as android.app.Activity).window
+-                    window.statusBarColor = if (isDark) android.graphics.Color.parseColor("#141414") else android.graphics.Color.parseColor("#FBFBFB")
+-                    window.navigationBarColor = if (isDark) android.graphics.Color.parseColor("#141414") else android.graphics.Color.parseColor("#FBFBFB")
+-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+-                        window.isNavigationBarContrastEnforced = false
+-                        window.isStatusBarContrastEnforced = false
+-                    }
+-                    androidx.core.view.WindowCompat.getInsetsController(window, view).apply {
+-                        isAppearanceLightStatusBars = !isDark
+-                        isAppearanceLightNavigationBars = !isDark
+-                    }
++                    (context as? ComponentActivity)?.enableEdgeToEdge(
++                        statusBarStyle = if (isDark) SystemBarStyle.dark(android.graphics.Color.parseColor("#141414")) else SystemBarStyle.light(android.graphics.Color.parseColor("#FBFBFB"), android.graphics.Color.parseColor("#141414")),
++                        navigationBarStyle = if (isDark) SystemBarStyle.dark(android.graphics.Color.parseColor("#141414")) else SystemBarStyle.light(android.graphics.Color.parseColor("#FBFBFB"), android.graphics.Color.parseColor("#141414"))
++                    )
+                 }
+             }
