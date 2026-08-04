@@ -235,7 +235,7 @@ fun UnitConverterScreen(modifier: Modifier = Modifier, onBack: () -> Unit, isDar
                         onFieldChange = { activeFieldIndex = it },
                         isDark = isDark,
                         primaryColor = primaryColor,
-                        buttonSize = if (isTablet) 84.dp else 56.dp
+                        buttonSize = if (isTablet) 84.dp else 46.dp
                     )
                 }
             }
