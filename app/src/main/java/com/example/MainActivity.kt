@@ -289,7 +289,14 @@ fun CalculatorApp(
                             expression = newValue
                         },
                         textStyle = TextStyle(
-                            fontSize = if (isLandscape) {
+                            fontSize = if (isTabletLandscape) {
+                                when {
+                                    expression.text.length > 25 -> 24.sp
+                                    expression.text.length > 15 -> 32.sp
+                                    expression.text.length > 10 -> 44.sp
+                                    else -> 56.sp
+                                }
+                            } else if (isLandscape) {
                                 when {
                                     expression.text.length > 25 -> 14.sp
                                     expression.text.length > 15 -> 18.sp
@@ -320,7 +327,7 @@ fun CalculatorApp(
 
                 Text(
                     text = resultPreview,
-                    fontSize = if (isLandscape) 20.sp else 32.sp,
+                    fontSize = if (isTabletLandscape) 36.sp else if (isLandscape) 20.sp else 32.sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = FontFamily.SansSerif,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
@@ -799,16 +806,17 @@ fun CalculatorButton(
     val isRed = text == "C"
     val isOperator = text in listOf("÷", "×", "-", "+", "( )", "%")
     val isEqual = text == "="
+    val isNumeric = text.matches(Regex("[0-9]")) || text == "," || text == "+/-"
     
     val bgColor = if (isEqual) primaryColor
         else if (isRed || isOperator) (if (isDark) Color(0xFF2B2B2B) else Color(0xFFE8E8E8))
-        else if (isScientific) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFE8E8E8))
+        else if (isScientific && !isNumeric) (if (isDark) Color(0xFF1E1E1E) else Color(0xFFE8E8E8))
         else (if (isDark) Color(0xFF222222) else Color(0xFFE8E8E8))
         
     val textColor = if (isEqual) Color.White
         else if (isRed) (if (isDark) Color(0xFFEF5350) else Color(0xFFD32F2F))
         else if (isOperator) primaryColor
-        else if (isScientific) (if (isDark) Color(0xFFB0B0B0) else Color(0xFF707070))
+        else if (isScientific && !isNumeric) (if (isDark) Color(0xFFB0B0B0) else Color(0xFF707070))
         else (if (isDark) Color.White else Color.Black)
 
     val fontSize = if (isTabletPortrait) {
