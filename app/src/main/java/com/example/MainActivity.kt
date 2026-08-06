@@ -16,6 +16,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.lazy.items
@@ -250,8 +251,8 @@ fun CalculatorApp(
         modifier = modifier
             .fillMaxSize()
             .padding(
-                start = if (isLandscape) 48.dp else 24.dp,
-                end = if (isLandscape) 48.dp else 24.dp,
+                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 12.dp,
+                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 12.dp,
                 top = if (isLandscape) 4.dp else 16.dp,
                 bottom = if (isLandscape) 4.dp else 16.dp
             ),
@@ -353,26 +354,31 @@ fun CalculatorApp(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { showHistory = !showHistory }) {
-                        Icon(imageVector = Icons.Default.History, contentDescription = "History", tint = if (showHistory) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)))
-                    }
-                    IconButton(onClick = { screen = "converter" }) {
-                        Icon(imageVector = Icons.Default.Straighten, contentDescription = "Unit Converter", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
-                    }
-                    if (!isLandscape && !isTabletPortrait) {
-                        IconButton(onClick = { isScientific = !isScientific }) {
-                            Icon(imageVector = Icons.Default.Calculate, contentDescription = "Scientific Toggle", tint = if (isScientific) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)), modifier = Modifier.size(24.dp))
+                Box(modifier = Modifier.weight(1f)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        IconButton(onClick = { showHistory = !showHistory }) {
+                            Icon(imageVector = Icons.Default.History, contentDescription = "History", tint = if (showHistory) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)))
                         }
-                    }
-                    IconButton(onClick = onThemeToggle) {
-                        Crossfade(targetState = themeMode, animationSpec = tween(500), label = "theme") { mode ->
-                            val icon = when(mode) {
-                                "auto" -> Icons.Default.BrightnessAuto
-                                "light" -> Icons.Default.LightMode
-                                else -> Icons.Default.DarkMode
+                        IconButton(onClick = { screen = "converter" }) {
+                            Icon(imageVector = Icons.Default.Straighten, contentDescription = "Unit Converter", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
+                        }
+                        if (!isLandscape && !isTabletPortrait) {
+                            IconButton(onClick = { isScientific = !isScientific }) {
+                                Icon(imageVector = Icons.Default.Calculate, contentDescription = "Scientific Toggle", tint = if (isScientific) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)), modifier = Modifier.size(24.dp))
                             }
-                            Icon(imageVector = icon, contentDescription = "Theme", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
+                        }
+                        IconButton(onClick = onThemeToggle) {
+                            Crossfade(targetState = themeMode, animationSpec = tween(500), label = "theme") { mode ->
+                                val icon = when(mode) {
+                                    "auto" -> Icons.Default.BrightnessAuto
+                                    "light" -> Icons.Default.LightMode
+                                    else -> Icons.Default.DarkMode
+                                }
+                                Icon(imageVector = icon, contentDescription = "Theme", tint = if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070))
+                            }
                         }
                     }
                 }
@@ -718,7 +724,7 @@ fun CalculatorApp(
                 )
 
                 if (showHistory) {
-                    Row(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(1.8f)) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
@@ -767,26 +773,26 @@ fun CalculatorApp(
                         }
                     }
                 } else {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1.5f)) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(1.8f)) {
                         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
                             if (isScientific) {
                                 portraitScientificKeys.forEach { row ->
-                                    Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 2.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         row.forEach { btn ->
                                             if (btn.isEmpty()) {
-                                                Box(modifier = Modifier.weight(1f).padding(horizontal = 2.dp))
+                                                Box(modifier = Modifier.weight(1f).padding(horizontal = 1.dp))
                                             } else {
                                                 val isNumOrOp = btn in listOf("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", ".", ",", "+/-", "+", "-", "×", "÷", "=", "C", "%", "( )")
-                                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = !isNumOrOp, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 2.dp), isPortraitScientific = true)
+                                                CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = !isNumOrOp, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 1.dp), isPortraitScientific = true)
                                             }
                                         }
                                     }
                                 }
                             } else {
                                 portraitKeys.forEach { row ->
-                                    Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Row(modifier = Modifier.fillMaxWidth().weight(1f).padding(vertical = 1.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                         row.forEach { btn ->
-                                            CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 4.dp))
+                                            CalculatorButton(text = btn, onClick = { onAction(btn) }, isScientific = false, isDark = isDark, primaryColor = primaryColor, modifier = Modifier.weight(1f).padding(horizontal = 2.dp))
                                         }
                                     }
                                 }
@@ -831,7 +837,8 @@ fun CalculatorButton(
         modifier = modifier,
         contentAlignment = Alignment.Center
     ) {
-        val size = androidx.compose.ui.unit.min(maxWidth, maxHeight) * (if (isLandscape) 0.8f else 0.95f)
+        val sizeMultiplier = if (isLandscape) 0.8f else if (isTabletPortrait) 0.95f else 1f
+        val size = androidx.compose.ui.unit.min(maxWidth, maxHeight) * sizeMultiplier
         val baseFontSize = if (isTabletPortrait) {
             if (isScientific && !isNumeric) 22f else 28f
         } else if (isLandscape) 20f else if (isPortraitScientific) 22f else if (isScientific && !isNumeric) 24f else 36f
