@@ -251,8 +251,8 @@ fun CalculatorApp(
         modifier = modifier
             .fillMaxSize()
             .padding(
-                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 12.dp,
-                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 12.dp,
+                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 10.dp,
+                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 10.dp,
                 top = if (isLandscape) 4.dp else 16.dp,
                 bottom = if (isLandscape) 4.dp else 16.dp
             ),
