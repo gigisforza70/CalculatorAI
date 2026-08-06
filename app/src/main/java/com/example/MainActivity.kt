@@ -128,6 +128,7 @@ fun CalculatorApp(
     val isTablet = configuration.smallestScreenWidthDp >= 600
     val isTabletPortrait = isTablet && !isLandscape
     val isTabletLandscape = isTablet && isLandscape
+    val isTallPortrait = !isLandscape && !isTablet && (configuration.screenHeightDp.toFloat() / configuration.screenWidthDp.toFloat() > 1.6f)
 
     var screen by remember { mutableStateOf("calculator") }
     if (screen == "converter") {
@@ -251,8 +252,8 @@ fun CalculatorApp(
         modifier = modifier
             .fillMaxSize()
             .padding(
-                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 10.dp,
-                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 10.dp,
+                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 8.dp,
+                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 8.dp,
                 top = if (isLandscape) 4.dp else 16.dp,
                 bottom = if (isLandscape) 4.dp else 16.dp
             ),
@@ -262,9 +263,9 @@ fun CalculatorApp(
             // Display area
             BoxWithConstraints(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(if (isTablet || isLandscape) 1f else if (isTallPortrait) 1.2f else 0.45f)
                     .fillMaxWidth()
-                    .padding(top = if (isLandscape) 4.dp else 24.dp)
+                    .padding(top = if (isLandscape) 4.dp else 12.dp)
             ) {
                 val displayScale = (maxHeight.value / 120f).coerceIn(0.4f, 1f)
                 
@@ -354,11 +355,10 @@ fun CalculatorApp(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Box(modifier = Modifier.weight(1f)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
+                Row(
+                    modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                         IconButton(onClick = { showHistory = !showHistory }) {
                             Icon(imageVector = Icons.Default.History, contentDescription = "History", tint = if (showHistory) primaryColor else (if(isDark) Color(0xFFA0A0A0) else Color(0xFF707070)))
                         }
@@ -381,7 +381,6 @@ fun CalculatorApp(
                             }
                         }
                     }
-                }
                 IconButton(onClick = { onAction("backspace") }) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.Backspace,
@@ -724,7 +723,7 @@ fun CalculatorApp(
                 )
 
                 if (showHistory) {
-                    Row(modifier = Modifier.fillMaxWidth().weight(1.8f)) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(if (isTallPortrait) 1.5f else 2.5f)) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
@@ -773,7 +772,7 @@ fun CalculatorApp(
                         }
                     }
                 } else {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1.8f)) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(if (isTallPortrait) 1.5f else 2.5f)) {
                         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
                             if (isScientific) {
                                 portraitScientificKeys.forEach { row ->
