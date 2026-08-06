@@ -128,6 +128,7 @@ fun CalculatorApp(
     val isTablet = configuration.smallestScreenWidthDp >= 600
     val isTabletPortrait = isTablet && !isLandscape
     val isTabletLandscape = isTablet && isLandscape
+    val isFreeformMode = !isLandscape && !isTablet && configuration.screenHeightDp < 750
 
     var screen by remember { mutableStateOf("calculator") }
     if (screen == "converter") {
@@ -251,10 +252,10 @@ fun CalculatorApp(
         modifier = modifier
             .fillMaxSize()
             .padding(
-                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 12.dp,
-                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else 12.dp,
-                top = if (isLandscape) 4.dp else 16.dp,
-                bottom = if (isLandscape) 4.dp else 16.dp
+                start = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else if (isFreeformMode) 4.dp else 12.dp,
+                end = if (isLandscape) 48.dp else if (isTabletPortrait) 24.dp else if (isFreeformMode) 4.dp else 12.dp,
+                top = if (isLandscape) 4.dp else if (isFreeformMode) 8.dp else 16.dp,
+                bottom = if (isLandscape) 4.dp else if (isFreeformMode) 8.dp else 16.dp
             ),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -262,9 +263,9 @@ fun CalculatorApp(
             // Display area
             BoxWithConstraints(
                 modifier = Modifier
-                    .weight(if (isTablet || isLandscape) 1f else 0.65f)
+                    .weight(if (isTablet || isLandscape) 1f else if (isFreeformMode) 0.35f else 0.65f)
                     .fillMaxWidth()
-                    .padding(top = if (isLandscape) 4.dp else 24.dp)
+                    .padding(top = if (isLandscape) 4.dp else if (isFreeformMode) 8.dp else 24.dp)
             ) {
                 val displayScale = (maxHeight.value / 120f).coerceIn(0.4f, 1f)
                 
@@ -346,7 +347,7 @@ fun CalculatorApp(
             }
             }
 
-            Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else 16.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else if (isFreeformMode) 4.dp else 16.dp))
 
             // Toolbar row
             Row(
@@ -389,9 +390,9 @@ fun CalculatorApp(
                 }
             }
 
-            Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else 8.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 4.dp else if (isFreeformMode) 2.dp else 8.dp))
             Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(if(isDark) Color(0xFF2B2B2B) else Color(0xFFE0E0E0)))
-            Spacer(modifier = Modifier.height(if (isLandscape) 6.dp else 12.dp))
+            Spacer(modifier = Modifier.height(if (isLandscape) 6.dp else if (isFreeformMode) 4.dp else 12.dp))
 
             // Keypad
             if (isTabletLandscape) {
@@ -722,7 +723,7 @@ fun CalculatorApp(
                 )
 
                 if (showHistory) {
-                    Row(modifier = Modifier.fillMaxWidth().weight(1.8f)) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(if (isFreeformMode) 2.8f else 1.8f)) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
@@ -771,7 +772,7 @@ fun CalculatorApp(
                         }
                     }
                 } else {
-                    Box(modifier = Modifier.fillMaxWidth().weight(1.8f)) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(if (isFreeformMode) 2.8f else 1.8f)) {
                         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
                             if (isScientific) {
                                 portraitScientificKeys.forEach { row ->
@@ -813,7 +814,8 @@ fun CalculatorButton(
     modifier: Modifier = Modifier,
     isLandscape: Boolean = false,
     isTabletPortrait: Boolean = false,
-    isPortraitScientific: Boolean = false
+    isPortraitScientific: Boolean = false,
+    isFreeformMode: Boolean = false
 ) {
     val isRed = text == "C"
     val isOperator = text in listOf("÷", "×", "-", "+", "( )", "%")
