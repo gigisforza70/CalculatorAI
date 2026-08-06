@@ -128,6 +128,7 @@ fun CalculatorApp(
     val isTablet = configuration.smallestScreenWidthDp >= 600
     val isTabletPortrait = isTablet && !isLandscape
     val isTabletLandscape = isTablet && isLandscape
+    val isFreeformMode = !isLandscape && !isTablet && configuration.screenHeightDp < 750
 
     var screen by remember { mutableStateOf("calculator") }
     if (screen == "converter") {
@@ -262,14 +263,13 @@ fun CalculatorApp(
             // Display area
             BoxWithConstraints(
                 modifier = Modifier
-                    .weight(if (isLandscape) 1f else 1f)
+                    .weight(if (isTablet || isLandscape) 1f else if (isFreeformMode) 1f else 1.2f)
                     .fillMaxWidth()
                     .padding(top = if (isLandscape) 4.dp else 12.dp, bottom = 4.dp)
             ) {
                 
                 Column(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Bottom,
                     horizontalAlignment = Alignment.End
                 ) {
                     val focusRequester = remember { FocusRequester() }
@@ -311,6 +311,12 @@ fun CalculatorApp(
                                     expression.text.length > 15 -> 18f
                                     else -> 26f
                                 }
+                            } else if (isFreeformMode) {
+                                when {
+                                    expression.text.length > 25 -> 16f
+                                    expression.text.length > 15 -> 20f
+                                    else -> 28f
+                                }
                             } else {
                                 when {
                                     expression.text.length > 25 -> 20f
@@ -332,11 +338,11 @@ fun CalculatorApp(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.weight(1f))
 
                 Text(
                     text = resultPreview,
-                    fontSize = (if (isTabletLandscape) 48f else if (isLandscape) 20f else 32f).sp,
+                    fontSize = (if (isTabletLandscape) 48f else if (isLandscape) 20f else if (isFreeformMode) 22f else 32f).sp,
                     fontWeight = FontWeight.Medium,
                     fontFamily = FontFamily.SansSerif,
                     color = if (isDark) Color(0xFFA0A0A0) else Color(0xFF707070),
@@ -722,7 +728,7 @@ fun CalculatorApp(
                 )
 
                 if (showHistory) {
-                    Row(modifier = Modifier.fillMaxWidth().weight(2.2f)) {
+                    Row(modifier = Modifier.fillMaxWidth().weight(if (isFreeformMode) 2.2f else 2.0f)) {
                         Box(modifier = Modifier.weight(3f).fillMaxHeight()) {
                             LazyColumn(
                                 modifier = Modifier.fillMaxSize(),
@@ -771,7 +777,7 @@ fun CalculatorApp(
                         }
                     }
                 } else {
-                    Box(modifier = Modifier.fillMaxWidth().weight(2.2f)) {
+                    Box(modifier = Modifier.fillMaxWidth().weight(if (isFreeformMode) 2.2f else 2.0f)) {
                         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.SpaceEvenly) {
                             if (isScientific) {
                                 portraitScientificKeys.forEach { row ->
